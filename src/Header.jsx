@@ -1,7 +1,7 @@
 function Header() {
     return(
         <header>
-            <h1>Work Habit Tracker</h1>
+            <h1>Habit Tracker</h1>
             <hr />
         </header>
     );
