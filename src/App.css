@@ -110,6 +110,23 @@ main {
   color: #999;
 }
 
+.form-group select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #333;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
 .add-btn {
   background: #000000;
   color: white;
@@ -271,5 +288,78 @@ footer p {
 
   .habits-container {
     grid-template-columns: 1fr;
+  }
+
+  .salary-section input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .habit-list {
+    padding: 1rem;
+  }
+
+  .habit-card {
+    padding: 1rem;
+  }
+
+  .habit-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .habit-card p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    padding: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  main {
+    padding: 0.5rem;
+  }
+
+  .habit-form,
+  .habit-list,
+  .salary-section {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .habit-form h2,
+  .habit-list h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .add-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .habit-card {
+    padding: 0.75rem;
+    border-left: 3px solid #000000;
+  }
+
+  .habits-container {
+    gap: 1rem;
+  }
+
+  footer {
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  button {
+    font-size: 0.9rem;
+    padding: 6px 12px;
   }
 }

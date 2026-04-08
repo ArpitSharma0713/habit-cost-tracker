@@ -1,20 +1,46 @@
 import { useState } from "react";
-
+import { db } from "./firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { auth } from "./firebase";
 
 function Habitform({setHabits}){
   const[name, setName]=useState("");
   const[cost ,setCost]= useState("");
   const[frequency, setFrequency]=useState("");
-  function handleadd(){
-    const newhabit={
+  const[category, setCategory]=useState("Food");
+  
+  async function handleAdd(){
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    if (!name || !cost || !frequency) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    const newHabit = {
       name,
       cost: Number(cost),
       frequency: Number(frequency),
+      category,
+      userId: user.uid
     };
-    setHabits(prev=>[...prev,newhabit]);
-    setName("");
-    setCost("");
-    setFrequency("");
+
+    try {
+      await addDoc(collection(db, "habits"), newHabit);
+      setHabits(prev => [...prev, newHabit]);
+      setName("");
+      setCost("");
+      setFrequency("");
+      setCategory("Food");
+    } catch (error) {
+      console.error(error);
+      alert("Error saving habit");
+    }
   }
 
     
@@ -31,16 +57,29 @@ function Habitform({setHabits}){
             value={cost} 
             onChange={e => setCost(e.target.value)} 
             type="number" 
-            placeholder="Cost per occurrence ($)" 
+            placeholder="Cost per occurrence (₹)" 
           />
           <input 
             value={frequency} 
             onChange={e => setFrequency(e.target.value)} 
             type="number" 
-            placeholder="Frequency per week" 
+            placeholder="Frequency per week"
           />
+          <select 
+            value={category} 
+            onChange={(e) => setCategory(e.target.value)}
+            style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
+          >
+            <option value="Food">🍔 Food</option>
+            <option value="Transport">🚗 Transport</option>
+            <option value="Subscriptions">📱 Subscriptions</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Health">💪 Health & Fitness</option>
+            <option value="Shopping">🛍️ Shopping</option>
+            <option value="Other">📌 Other</option>
+          </select>
         </div>
-        <button className="add-btn" onClick={handleadd}>Add Habit</button>
+        <button className="add-btn" onClick={handleAdd}>Add Habit</button>
       </div>
       );
 
