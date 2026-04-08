@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signup, login, logout, loginWithGoogle, getErrorMessage, createGoogleUserProfile } from "./auth";
+import { signup, login, logout, loginWithGoogle, getErrorMessage } from "./auth";
 import "./Auth.css";
 
 function Auth() {
@@ -85,11 +85,10 @@ function Auth() {
       const result = await loginWithGoogle();
       const googleUser = result.user;
 
-      // Create user profile in Firestore
-      await createGoogleUserProfile(googleUser);
-
+      // Don't create profile here - let ProfileSetup component handle it
+      // User will be logged in and ProfileSetup will appear if needed
       setUser({ email: googleUser.email });
-      setSuccess("Google login successful!");
+      setSuccess("Google login successful! Setting up your profile...");
     } catch (err) {
       setError(getErrorMessage(err.code));
     } finally {

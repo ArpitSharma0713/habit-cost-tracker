@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from './firebase';
 import { logout } from './auth';
 import Auth from './Auth.jsx';
+import ProfileSetup from './ProfileSetup.jsx';
 import Header from './Header.jsx'
 import Footer from './Footer.jsx'
 import Habitform from './Habitform.jsx';
@@ -15,6 +16,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [habits, setHabits] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +32,7 @@ function App() {
         if (!user) {
           setHabits([]);
           setProfile(null);
+          setNeedsProfileSetup(false);
           setLoading(false);
           return;
         }
@@ -40,31 +43,30 @@ function App() {
         
         if (snap.exists()) {
           setProfile(snap.data());
+          setNeedsProfileSetup(false);
+
+          // Fetch habits only after profile is set
+          const q = query(
+            collection(db, "habits"),
+            where("userId", "==", user.uid)
+          );
+
+          const snapshot = await getDocs(q);
+
+          const habitsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          setHabits(habitsData);
+          setLoading(false);
         } else {
-          // Fallback profile if not found
-          setProfile({
-            currency: "₹",
-            userType: "student",
-            income: 0,
-            incomeFrequency: "monthly"
-          });
+          // New user - show profile setup
+          setProfile(null);
+          setNeedsProfileSetup(true);
+          setHabits([]);
+          setLoading(false);
         }
-
-        // Fetch habits
-        const q = query(
-          collection(db, "habits"),
-          where("userId", "==", user.uid)
-        );
-
-        const snapshot = await getDocs(q);
-
-        const habitsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        setHabits(habitsData);
-        setLoading(false);
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Failed to load data. Please try again.");
@@ -77,6 +79,10 @@ function App() {
 
   if (!user) {
     return <Auth />;
+  }
+
+  if (needsProfileSetup) {
+    return <ProfileSetup user={user} onComplete={() => setNeedsProfileSetup(false)} />;
   }
 
   if (loading) {

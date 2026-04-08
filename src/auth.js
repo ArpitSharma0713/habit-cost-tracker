@@ -69,19 +69,22 @@ export async function createGoogleUserProfile(user) {
   const { getDoc } = await import("firebase/firestore");
   const snap = await getDoc(userRef);
   
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      email: user.email,
-      displayName: user.displayName || "",
-      photoURL: user.photoURL || "",
-      currency: "₹",
-      userType: "working",
-      income: 0,
-      incomeFrequency: "monthly",
-      createdAt: new Date(),
-      authMethod: "google"
-    });
-  }
+  // Return true if new user, false if existing
+  return !snap.exists();
+}
+
+export async function saveGoogleUserProfile(user, profileData) {
+  await setDoc(doc(db, "users", user.uid), {
+    email: user.email,
+    displayName: user.displayName || "",
+    photoURL: user.photoURL || "",
+    currency: profileData.currency || "₹",
+    userType: profileData.userType || "working",
+    income: profileData.income || 0,
+    incomeFrequency: profileData.incomeFrequency || "monthly",
+    createdAt: new Date(),
+    authMethod: "google"
+  });
 }
 
 export function logout() {
