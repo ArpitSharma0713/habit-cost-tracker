@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { getMonthlyCost, getYearlyCost } from "./utils";
 
 function HabitChart({ habits, selectedCategory }) {
   if (!habits || habits.length === 0) {
@@ -11,14 +12,14 @@ function HabitChart({ habits, selectedCategory }) {
 
   const chartData = habits.map(h => ({
     name: h.name,
-    yearly: h.cost * h.frequency * 52,
-    monthly: h.cost * h.frequency * 4
+    yearly: getYearlyCost(h),
+    monthly: getMonthlyCost(h)
   }));
 
   const categoryData = {};
   habits.forEach(h => {
     const category = h.category || "Other";
-    categoryData[category] = (categoryData[category] || 0) + h.cost * h.frequency * 52;
+    categoryData[category] = (categoryData[category] || 0) + getYearlyCost(h);
   });
 
   const pieData = Object.entries(categoryData).map(([name, value]) => ({

@@ -2,22 +2,34 @@ import { db } from "./firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { updateDoc } from "firebase/firestore";
 import { useState } from "react";
+import { getMonthlyCost, getYearlyCost, convertToMonthly } from "./utils";
+import "./Habitlist.css";
 
-function Habitlist({habits, salary, setSalary, setHabits}){
+function Habitlist({habits, profile, setHabits}){
     const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({ name: "", cost: "", frequency: "", category: "" });
+    const [editForm, setEditForm] = useState({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
     const [selectedCategory, setSelectedCategory] = useState("All");
     
     const categories = ["All", "Food", "Transport", "Subscriptions", "Entertainment", "Health", "Shopping", "Other"];
     const filteredHabits = selectedCategory === "All" ? habits : habits.filter(h => h.category === selectedCategory);
     
-    const totalMonthly = filteredHabits.reduce((sum, h) => sum + h.cost * h.frequency * 4, 0);
-    const totalYearly = filteredHabits.reduce((sum, h) => sum + h.cost * h.frequency * 52, 0);
+    // Calculate monthly and yearly using the new normalized function
+    const totalMonthly = filteredHabits.reduce((sum, h) => sum + getMonthlyCost(h), 0);
+    const totalYearly = filteredHabits.reduce((sum, h) => sum + getYearlyCost(h), 0);
     
-    const topHabit = filteredHabits.reduce((max, h) =>
-      h.cost * h.frequency > (max.cost || 0) * (max.frequency || 0) ? h : max,
-      filteredHabits[0] || {}
-    );
+    // Get user's monthly income
+    const monthlyIncome = profile ? convertToMonthly(profile.income, profile.incomeFrequency) : 0;
+    const dailyIncome = monthlyIncome / 30;
+    
+    // Calculate work-time impact (days of life spent on habits)
+    const daysLostPerMonth = dailyIncome ? (totalMonthly / dailyIncome) : 0;
+    
+    // Find top habit by monthly cost
+    const topHabit = filteredHabits.reduce((max, h) => {
+      const maxCost = getMonthlyCost(max);
+      const hCost = getMonthlyCost(h);
+      return hCost > maxCost ? h : max;
+    }, filteredHabits[0] || {});
     
     async function handleDelete(id) {
       try {
@@ -47,24 +59,23 @@ function Habitlist({habits, salary, setSalary, setHabits}){
 
     function startEdit(habit) {
       setEditingId(habit.id);
-      setEditForm({ name: habit.name, cost: habit.cost, frequency: habit.frequency, category: habit.category || "Food" });
+      setEditForm({ 
+        name: habit.name, 
+        cost: habit.cost, 
+        frequency: habit.frequency, 
+        frequencyType: habit.frequencyType || "daily",
+        category: habit.category || "Food" 
+      });
     }
 
     function cancelEdit() {
       setEditingId(null);
-      setEditForm({ name: "", cost: "", frequency: "", category: "" });
+      setEditForm({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
     }
+    
     return(
         <div className="habit-list">
             <h2>Your Habits</h2>
-            
-            <div className="salary-section">
-              <input 
-                placeholder="Enter your monthly salary (₹)" 
-                value={salary} 
-                onChange={(e) => setSalary(e.target.value)} 
-              />
-            </div>
             
             {habits.length > 0 && (
               <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
@@ -94,20 +105,40 @@ function Habitlist({habits, salary, setSalary, setHabits}){
             )}
             
             {habits.length > 0 && (
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <div style={{ background: '#f5f5f5', padding: '12px 24px', borderRadius: '8px' }}>
-                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Total Monthly</p>
-                  <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>₹{totalMonthly.toFixed(2)}</h3>
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '2rem' }}>
+                  <div style={{ background: '#f5f5f5', padding: '16px 24px', borderRadius: '8px' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Total Monthly</p>
+                    <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>{profile?.currency}{totalMonthly.toFixed(2)}</h3>
+                  </div>
+                  <div style={{ background: '#f5f5f5', padding: '16px 24px', borderRadius: '8px' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Total Yearly</p>
+                    <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>{profile?.currency}{totalYearly.toFixed(2)}</h3>
+                  </div>
+                  
+                  {monthlyIncome > 0 && (
+                    <div style={{ background: '#f5f5f5', padding: '16px 24px', borderRadius: '8px' }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Percentage of Income</p>
+                      <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>
+                        {((totalMonthly / monthlyIncome) * 100).toFixed(1)}%
+                      </h3>
+                    </div>
+                  )}
+                  
+                  {daysLostPerMonth > 0 && (
+                    <div style={{ background: '#000', color: '#fff', padding: '16px 24px', borderRadius: '8px' }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#ccc' }}>Days Lost Per Month</p>
+                      <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{daysLostPerMonth.toFixed(1)} days</h3>
+                      <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#bbb' }}>of your time every month</p>
+                    </div>
+                  )}
                 </div>
-                <div style={{ background: '#f5f5f5', padding: '12px 24px', borderRadius: '8px' }}>
-                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Total Yearly</p>
-                  <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>₹{totalYearly.toFixed(2)}</h3>
-                </div>
-                {topHabit.name && (
-                  <div style={{ background: '#000', color: '#fff', padding: '12px 24px', borderRadius: '8px' }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#ccc' }}>Biggest Expense 📍</p>
-                    <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{topHabit.name}</h3>
-                    <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#bbb' }}>₹{(topHabit.cost * topHabit.frequency * 52).toFixed(2)}/year</p>
+                
+                {profile && monthlyIncome > 0 && (
+                  <div style={{ background: '#fff3cd', border: '1px solid #ffc107', padding: '16px', borderRadius: '8px', marginBottom: '2rem' }}>
+                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: '600', color: '#856404' }}>
+                      You are spending <strong>{daysLostPerMonth.toFixed(1)} days</strong> of your {profile.userType === "student" ? "pocket money" : "salary"} every month on these habits!
+                    </p>
                   </div>
                 )}
               </div>
@@ -121,11 +152,9 @@ function Habitlist({habits, salary, setSalary, setHabits}){
               <div>
                 <div className="habits-container">
                   {filteredHabits.map((habit,index)=>{
-                    const weekly = habit.cost * habit.frequency;
-                    const monthly = habit.cost * habit.frequency * 4;
-                    const yearly = habit.cost * habit.frequency * 52;
-                    const dailyIncome = salary ? salary / 30 : 0;
-                    const days = dailyIncome ? (yearly / dailyIncome) : 0;
+                    const monthly = getMonthlyCost(habit);
+                    const yearly = getYearlyCost(habit);
+                    const daysLost = dailyIncome ? (monthly / dailyIncome) : 0;
                     
                     if (editingId === habit.id) {
                       return (
@@ -152,22 +181,31 @@ function Habitlist({habits, salary, setSalary, setHabits}){
                               className="auth-input"
                               type="number"
                               value={editForm.frequency}
-                              placeholder="Frequency per week"
+                              placeholder="Frequency"
                               onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value })}
                               style={{ marginBottom: '12px' }}
                             />
+                            <select
+                              value={editForm.frequencyType}
+                              onChange={(e) => setEditForm({ ...editForm, frequencyType: e.target.value })}
+                              style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit', marginBottom: '12px' }}
+                            >
+                              <option value="daily">Daily</option>
+                              <option value="weekly">Weekly</option>
+                              <option value="monthly">Monthly</option>
+                            </select>
                             <select
                               value={editForm.category}
                               onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                               style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
                             >
-                              <option value="Food">🍔 Food</option>
-                              <option value="Transport">🚗 Transport</option>
-                              <option value="Subscriptions">📱 Subscriptions</option>
-                              <option value="Entertainment">🎬 Entertainment</option>
-                              <option value="Health">💪 Health & Fitness</option>
-                              <option value="Shopping">🛍️ Shopping</option>
-                              <option value="Other">📌 Other</option>
+                              <option value="Food">Food</option>
+                              <option value="Transport">Transport</option>
+                              <option value="Subscriptions">Subscriptions</option>
+                              <option value="Entertainment">Entertainment</option>
+                              <option value="Health">Health & Fitness</option>
+                              <option value="Shopping">Shopping</option>
+                              <option value="Other">Other</option>
                             </select>
                           </div>
                           <div style={{ display: 'flex', gap: '12px' }}>
@@ -176,6 +214,7 @@ function Habitlist({habits, salary, setSalary, setHabits}){
                                 name: editForm.name,
                                 cost: Number(editForm.cost),
                                 frequency: Number(editForm.frequency),
+                                frequencyType: editForm.frequencyType,
                                 category: editForm.category
                               })}
                               style={{ flex: 1, padding: '8px 16px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
@@ -202,12 +241,11 @@ function Habitlist({habits, salary, setSalary, setHabits}){
                           </span>
                         </div>
                         <div className="cost-info">
-                          <p><strong>₹{habit.cost.toFixed(2)}</strong> × <strong>{habit.frequency}</strong> times/week</p>
+                          <p><strong>{profile?.currency}{habit.cost.toFixed(2)}</strong> × <strong>{habit.frequency}</strong> {habit.frequencyType || "weekly"}</p>
                         </div>
-                        <p><strong>Weekly cost:</strong> ₹{weekly.toFixed(2)}</p>
-                        <p><strong>Monthly cost:</strong> ₹{monthly.toFixed(2)}</p>
-                        <p><strong>Yearly cost:</strong> ₹{yearly.toFixed(2)}</p>
-                        {salary && <div className="days-work">~ {days.toFixed(1)} days of work</div>}
+                        <p><strong>Monthly cost:</strong> {profile?.currency}{monthly.toFixed(2)}</p>
+                        <p><strong>Yearly cost:</strong> {profile?.currency}{yearly.toFixed(2)}</p>
+                        {daysLost > 0 && <div className="days-work">{daysLost.toFixed(1)} days of {profile?.userType === "student" ? "pocket money" : "salary"}/month</div>}
                         <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                           <button
                             onClick={() => startEdit(habit)}
@@ -226,7 +264,6 @@ function Habitlist({habits, salary, setSalary, setHabits}){
                     );
                   })}
                 </div>
-                {salary && <div style={{textAlign: 'center', marginTop: '2rem', background: 'white', padding: '1.5rem', borderRadius: '12px', color: '#000000', fontWeight: '600', fontSize: '1.1rem'}}>Total yearly: ₹{totalYearly.toFixed(2)} ({(totalYearly / salary * 12).toFixed(1)} months of salary)</div>}
               </div>
             )}
         </div>

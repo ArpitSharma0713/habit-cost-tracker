@@ -8,12 +8,13 @@ import Footer from './Footer.jsx'
 import Habitform from './Habitform.jsx';
 import Habitlist from './Habitlist.jsx';
 import HabitChart from './HabitChart.jsx';
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import { convertToMonthly } from './utils';
 
 function App() {
   const [user, setUser] = useState(null);
   const [habits, setHabits] = useState([]);
-  const [salary, setSalary] = useState("");
+  const [profile, setProfile] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,10 +29,28 @@ function App() {
         
         if (!user) {
           setHabits([]);
+          setProfile(null);
           setLoading(false);
           return;
         }
 
+        // Fetch user profile
+        const docRef = doc(db, "users", user.uid);
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
+          setProfile(snap.data());
+        } else {
+          // Fallback profile if not found
+          setProfile({
+            currency: "₹",
+            userType: "student",
+            income: 0,
+            incomeFrequency: "monthly"
+          });
+        }
+
+        // Fetch habits
         const q = query(
           collection(db, "habits"),
           where("userId", "==", user.uid)
@@ -47,8 +66,8 @@ function App() {
         setHabits(habitsData);
         setLoading(false);
       } catch (err) {
-        console.error("Error loading habits:", err);
-        setError("Failed to load habits. Please try again.");
+        console.error("Error loading data:", err);
+        setError("Failed to load data. Please try again.");
         setLoading(false);
       }
     });
@@ -109,7 +128,16 @@ function App() {
         )}
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`, background: darkMode ? '#0a0a0a' : '#f9f9f9', borderRadius: '8px', marginBottom: '20px' }}>
-          <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>Welcome {user.email}</p>
+          <div>
+            <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>Welcome {user.email}</p>
+            {profile && (
+              <div style={{ marginTop: '8px', fontSize: '14px', color: darkMode ? '#ccc' : '#666' }}>
+                <p style={{ margin: '4px 0' }}>
+                  {profile.userType === "student" ? "Pocket Money" : "Salary"}: {profile.currency} {convertToMonthly(profile.income, profile.incomeFrequency).toFixed(2)}/month
+                </p>
+              </div>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button 
               onClick={() => setDarkMode(!darkMode)} 
@@ -125,7 +153,7 @@ function App() {
         
         <Habitform setHabits={setHabits} />
         <HabitChart habits={habits} />
-        <Habitlist habits={habits} salary={salary} setSalary={setSalary} setHabits={setHabits}/>
+        <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
       </main>
       <Footer/>
     </div>
