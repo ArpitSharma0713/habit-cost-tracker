@@ -46,6 +46,7 @@ export async function signup(email, password, profileData = {}){
       userType: profileData.userType || "student",
       income: profileData.income || 0,
       incomeFrequency: profileData.incomeFrequency || "monthly",
+      budget: profileData.budget ? Number(profileData.budget) : null,
       createdAt: new Date(),
       authMethod: "email"
     });
@@ -82,6 +83,7 @@ export async function saveGoogleUserProfile(user, profileData) {
     userType: profileData.userType || "working",
     income: profileData.income || 0,
     incomeFrequency: profileData.incomeFrequency || "monthly",
+    budget: profileData.budget ? Number(profileData.budget) : null,
     createdAt: new Date(),
     authMethod: "google"
   });

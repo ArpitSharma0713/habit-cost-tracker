@@ -11,6 +11,7 @@ function Auth() {
   const [userType, setUserType] = useState("student");
   const [income, setIncome] = useState("");
   const [incomeFrequency, setIncomeFrequency] = useState("monthly");
+  const [budget, setBudget] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,12 +36,14 @@ function Auth() {
         currency,
         userType,
         income: Number(income),
-        incomeFrequency
+        incomeFrequency,
+        budget: budget ? Number(budget) : null
       });
       setUser({ email });
       setEmail("");
       setPassword("");
       setIncome("");
+      setBudget("");
       setCurrency("₹");
       setUserType("student");
       setIncomeFrequency("monthly");
@@ -203,6 +206,19 @@ function Auth() {
                 <option value="monthly">Monthly Income</option>
                 <option value="yearly">Yearly Income</option>
               </select>
+            </div>
+
+            <div className="auth-input-group">
+              <input
+                className="auth-input"
+                type="number"
+                placeholder="Monthly Spending Budget (optional)"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                disabled={loading}
+                min="0"
+              />
+              <small style={{ color: '#999', marginTop: '4px' }}>Budget is optional and helps track spending limits</small>
             </div>
           </>
         )}

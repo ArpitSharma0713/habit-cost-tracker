@@ -7,6 +7,7 @@ function ProfileSetup({ user, onComplete }) {
   const [userType, setUserType] = useState("working");
   const [income, setIncome] = useState("");
   const [incomeFrequency, setIncomeFrequency] = useState("monthly");
+  const [budget, setBudget] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,18 +26,29 @@ function ProfileSetup({ user, onComplete }) {
       return;
     }
 
+    // Budget is optional - only validate if provided
+    if (budget && budget <= 0) {
+      setError("Budget must be greater than 0 if provided");
+      return;
+    }
+
+    if (budget && budget > 10000000) {
+      setError("Budget seems too high. Please check the value");
+      return;
+    }
+
     setLoading(true);
     try {
       await saveGoogleUserProfile(user, {
         currency,
         userType,
         income: Number(income),
-        incomeFrequency
+        incomeFrequency,
+        budget: budget ? Number(budget) : null
       });
 
       setSuccess("Profile saved successfully!");
       
-      // Wait a moment then call onComplete
       setTimeout(() => {
         onComplete();
       }, 1000);
@@ -59,7 +71,7 @@ function ProfileSetup({ user, onComplete }) {
       <div className="profile-setup-card">
         <h2>Complete Your Profile</h2>
         <p className="profile-setup-subtitle">
-          Welcome to Habit Tracker! Let's set up your financial profile.
+          Welcome to Habit Tracker, Let's set up your profile.
         </p>
 
         {error && <div className="profile-setup-error">{error}</div>}
@@ -121,8 +133,22 @@ function ProfileSetup({ user, onComplete }) {
           </select>
         </div>
 
+        <div className="profile-setup-form-group">
+          <label className="profile-setup-label">Monthly Spending Budget <span style={{ color: '#999', fontSize: '12px' }}>(Optional)</span></label>
+          <input
+            className="profile-setup-input"
+            type="number"
+            placeholder="Enter your monthly budget (optional)"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+            min="0"
+          />
+        </div>
+
         <div className="profile-setup-hint">
-          <strong>Note:</strong> You can always update these settings later from your profile. This helps us calculate habit costs as a percentage of your income.
+          <strong>Note:</strong> You can always update these settings later from your profile. Budget is optional and helps us track spending limits.
         </div>
 
         <div className="profile-setup-button-group">

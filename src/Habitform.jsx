@@ -4,7 +4,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { auth } from "./firebase";
 import "./Habitform.css";
 
-function Habitform({setHabits}){
+function Habitform({setHabits, currency = '₹'}){
   const[name, setName]=useState("");
   const[cost ,setCost]= useState("");
   const[frequency, setFrequency]=useState("");
@@ -61,7 +61,7 @@ function Habitform({setHabits}){
             value={cost} 
             onChange={e => setCost(e.target.value)} 
             type="number" 
-            placeholder="Cost per occurrence (₹)" 
+            placeholder={`Cost per occurrence (${currency})`} 
           />
           <input 
             value={frequency} 

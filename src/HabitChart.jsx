@@ -1,7 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { getMonthlyCost, getYearlyCost } from "./utils";
 
-function HabitChart({ habits, selectedCategory }) {
+function HabitChart({ habits, selectedCategory, currency = '₹' }) {
   if (!habits || habits.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
@@ -39,7 +39,7 @@ function HabitChart({ habits, selectedCategory }) {
             <BarChart data={chartData}>
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} style={{ fontSize: '12px' }} />
               <YAxis />
-              <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
+              <Tooltip formatter={(value) => `${currency}${value.toFixed(2)}`} />
               <Bar dataKey="yearly" fill="#000" />
             </BarChart>
           </ResponsiveContainer>
@@ -56,7 +56,7 @@ function HabitChart({ habits, selectedCategory }) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.name}: ₹${entry.value}`}
+                  label={(entry) => `${entry.name}: ${currency}${entry.value}`}
                   outerRadius={80}
                   fill="#000"
                   dataKey="value"
@@ -65,7 +65,7 @@ function HabitChart({ habits, selectedCategory }) {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => `${currency}${value.toFixed(2)}`} />
               </PieChart>
             </ResponsiveContainer>
           </div>

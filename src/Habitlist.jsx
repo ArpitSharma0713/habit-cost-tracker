@@ -2,7 +2,7 @@ import { db } from "./firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { updateDoc } from "firebase/firestore";
 import { useState } from "react";
-import { getMonthlyCost, getYearlyCost, convertToMonthly } from "./utils";
+import { getMonthlyCost, getYearlyCost, convertToMonthly, checkBudgetStatus, exportHabitsToJSON, downloadJSON } from "./utils";
 import "./Habitlist.css";
 
 function Habitlist({habits, profile, setHabits}){
@@ -23,6 +23,9 @@ function Habitlist({habits, profile, setHabits}){
     
     // Calculate work-time impact (days of life spent on habits)
     const daysLostPerMonth = dailyIncome ? (totalMonthly / dailyIncome) : 0;
+    
+    // Check budget status
+    const budgetStatus = profile?.budget ? checkBudgetStatus(totalMonthly, profile.budget) : null;
     
     // Find top habit by monthly cost
     const topHabit = filteredHabits.reduce((max, h) => {
@@ -71,6 +74,17 @@ function Habitlist({habits, profile, setHabits}){
     function cancelEdit() {
       setEditingId(null);
       setEditForm({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
+    }
+
+    function handleExportData() {
+      try {
+        const jsonData = exportHabitsToJSON(habits, profile);
+        const filename = `habits-export-${new Date().toISOString().split('T')[0]}.json`;
+        downloadJSON(jsonData, filename);
+      } catch (error) {
+        console.error("Export failed:", error);
+        alert("Failed to export data. Please try again.");
+      }
     }
     
     return(
@@ -132,6 +146,37 @@ function Habitlist({habits, profile, setHabits}){
                       <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#bbb' }}>of your time every month</p>
                     </div>
                   )}
+
+                  {budgetStatus && (
+                    <div style={{
+                      background: budgetStatus.status === 'exceeded' ? '#fee' : budgetStatus.status === 'warning' ? '#fff3cd' : '#f0f0f0',
+                      border: budgetStatus.status === 'exceeded' ? '1px solid #fcc' : budgetStatus.status === 'warning' ? '1px solid #ffc107' : '1px solid #ddd',
+                      padding: '16px 24px',
+                      borderRadius: '8px'
+                    }}>
+                      <p style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '0.9rem',
+                        color: budgetStatus.status === 'exceeded' ? '#c00' : budgetStatus.status === 'warning' ? '#856404' : '#666'
+                      }}>
+                        Budget Status
+                      </p>
+                      <h3 style={{
+                        margin: 0,
+                        fontSize: '1.5rem',
+                        color: budgetStatus.status === 'exceeded' ? '#c00' : budgetStatus.status === 'warning' ? '#856404' : '#000'
+                      }}>
+                        {budgetStatus.percentage.toFixed(1)}%
+                      </h3>
+                      <p style={{
+                        margin: '8px 0 0 0',
+                        fontSize: '0.85rem',
+                        color: budgetStatus.status === 'exceeded' ? '#c00' : budgetStatus.status === 'warning' ? '#856404' : '#666'
+                      }}>
+                        of {profile?.currency}{profile.budget} budget
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 {profile && monthlyIncome > 0 && (
@@ -139,6 +184,25 @@ function Habitlist({habits, profile, setHabits}){
                     <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: '600', color: '#856404' }}>
                       You are spending <strong>{daysLostPerMonth.toFixed(1)} days</strong> of your {profile.userType === "student" ? "pocket money" : "salary"} every month on these habits!
                     </p>
+                  </div>
+                )}
+
+                {budgetStatus && budgetStatus.status === 'exceeded' && (
+                  <div style={{ background: '#fee', border: '1px solid #fcc', padding: '16px', borderRadius: '8px', marginBottom: '2rem' }}>
+                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: '600', color: '#c00' }}>
+                      Important: Your spending has exceeded your monthly budget of {profile?.currency}{profile.budget}. Consider reducing some habits or increasing your budget.
+                    </p>
+                  </div>
+                )}
+
+                {habits.length > 0 && (
+                  <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+                    <button
+                      className="habit-export-button"
+                      onClick={handleExportData}
+                    >
+                      Export Data
+                    </button>
                   </div>
                 )}
               </div>

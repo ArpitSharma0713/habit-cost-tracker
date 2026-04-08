@@ -28,3 +28,61 @@ export function convertToMonthly(income, incomeFrequency) {
   }
   return income;
 }
+
+export function checkBudgetStatus(totalMonthly, budget) {
+  if (!budget || budget === 0) {
+    return { status: "none", percentage: 0 };
+  }
+
+  const percentage = (totalMonthly / budget) * 100;
+
+  if (percentage > 100) {
+    return { status: "exceeded", percentage };
+  } else if (percentage > 80) {
+    return { status: "warning", percentage };
+  } else if (percentage > 50) {
+    return { status: "moderate", percentage };
+  }
+
+  return { status: "safe", percentage };
+}
+
+export function exportHabitsToJSON(habits, profile = null) {
+  const exportData = {
+    exportDate: new Date().toISOString(),
+    profile: profile
+      ? {
+          currency: profile.currency,
+          userType: profile.userType,
+          income: profile.income,
+          incomeFrequency: profile.incomeFrequency,
+          budget: profile.budget
+        }
+      : null,
+    totalHabits: habits.length,
+    habits: habits.map((habit) => ({
+      name: habit.name,
+      cost: habit.cost,
+      frequency: habit.frequency,
+      frequencyType: habit.frequencyType || "weekly",
+      category: habit.category,
+      monthlyCost: getMonthlyCost(habit),
+      yearlyCost: getYearlyCost(habit)
+    }))
+  };
+
+  return JSON.stringify(exportData, null, 2);
+}
+
+export function downloadJSON(jsonString, filename = "habits-export.json") {
+  const element = document.createElement("a");
+  element.setAttribute(
+    "href",
+    "data:text/plain;charset=utf-8," + encodeURIComponent(jsonString)
+  );
+  element.setAttribute("download", filename);
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}

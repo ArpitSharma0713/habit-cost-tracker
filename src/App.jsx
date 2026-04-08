@@ -157,8 +157,8 @@ function App() {
           </div>
         </div>
         
-        <Habitform setHabits={setHabits} />
-        <HabitChart habits={habits} />
+        <Habitform setHabits={setHabits} currency={profile?.currency || '₹'} />
+        <HabitChart habits={habits} currency={profile?.currency || '₹'} />
         <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
       </main>
       <Footer/>
