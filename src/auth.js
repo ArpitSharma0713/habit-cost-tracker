@@ -5,7 +5,6 @@ import { signOut } from "firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 
-// Convert Firebase error codes to user-friendly messages
 export function getErrorMessage(code) {
   switch (code) {
     case "auth/invalid-email":
@@ -39,7 +38,6 @@ export async function signup(email, password, profileData = {}){
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
-    // Save user profile to Firestore
     await setDoc(doc(db, "users", user.uid), {
       email: user.email,
       currency: profileData.currency || "₹",

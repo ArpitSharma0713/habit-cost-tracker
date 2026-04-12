@@ -37,7 +37,6 @@ function App() {
           return;
         }
 
-        // Fetch user profile
         const docRef = doc(db, "users", user.uid);
         const snap = await getDoc(docRef);
         
@@ -45,7 +44,6 @@ function App() {
           setProfile(snap.data());
           setNeedsProfileSetup(false);
 
-          // Fetch habits only after profile is set
           const q = query(
             collection(db, "habits"),
             where("userId", "==", user.uid)
@@ -61,7 +59,6 @@ function App() {
           setHabits(habitsData);
           setLoading(false);
         } else {
-          // New user - show profile setup
           setProfile(null);
           setNeedsProfileSetup(true);
           setHabits([]);
@@ -149,7 +146,7 @@ function App() {
               onClick={() => setDarkMode(!darkMode)} 
               style={{ padding: '8px 16px', background: darkMode ? '#fff' : '#000', color: darkMode ? '#000' : '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
             >
-              {darkMode ? '☀️ Light' : '🌙 Dark'}
+              {darkMode ? ' Light' : ' Dark'}
             </button>
             <button onClick={logout} style={{ padding: '8px 16px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}>
               Logout
