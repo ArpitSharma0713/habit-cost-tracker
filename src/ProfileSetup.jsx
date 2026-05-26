@@ -26,7 +26,6 @@ function ProfileSetup({ user, onComplete }) {
       return;
     }
 
-    // Budget is optional - only validate if provided
     if (budget && budget <= 0) {
       setError("Budget must be greater than 0 if provided");
       return;

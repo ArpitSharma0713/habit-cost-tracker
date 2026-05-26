@@ -64,11 +64,9 @@ export async function loginWithGoogle(){
 export async function createGoogleUserProfile(user) {
   const userRef = doc(db, "users", user.uid);
   
-  // Check if profile already exists
   const { getDoc } = await import("firebase/firestore");
   const snap = await getDoc(userRef);
   
-  // Return true if new user, false if existing
   return !snap.exists();
 }
 

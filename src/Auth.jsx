@@ -87,9 +87,6 @@ function Auth() {
     try {
       const result = await loginWithGoogle();
       const googleUser = result.user;
-
-      // Don't create profile here - let ProfileSetup component handle it
-      // User will be logged in and ProfileSetup will appear if needed
       setUser({ email: googleUser.email });
       setSuccess("Google login successful! Setting up your profile...");
     } catch (err) {

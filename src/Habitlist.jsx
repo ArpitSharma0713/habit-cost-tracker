@@ -13,21 +13,16 @@ function Habitlist({habits, profile, setHabits}){
     const categories = ["All", "Food", "Transport", "Subscriptions", "Entertainment", "Health", "Shopping", "Other"];
     const filteredHabits = selectedCategory === "All" ? habits : habits.filter(h => h.category === selectedCategory);
     
-    // Calculate monthly and yearly using the new normalized function
     const totalMonthly = filteredHabits.reduce((sum, h) => sum + getMonthlyCost(h), 0);
     const totalYearly = filteredHabits.reduce((sum, h) => sum + getYearlyCost(h), 0);
     
-    // Get user's monthly income
     const monthlyIncome = profile ? convertToMonthly(profile.income, profile.incomeFrequency) : 0;
     const dailyIncome = monthlyIncome / 30;
     
-    // Calculate work-time impact (days of life spent on habits)
     const daysLostPerMonth = dailyIncome ? (totalMonthly / dailyIncome) : 0;
     
-    // Check budget status
     const budgetStatus = profile?.budget ? checkBudgetStatus(totalMonthly, profile.budget) : null;
     
-    // Find top habit by monthly cost
     const topHabit = filteredHabits.reduce((max, h) => {
       const maxCost = getMonthlyCost(max);
       const hCost = getMonthlyCost(h);

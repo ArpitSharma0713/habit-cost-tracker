@@ -9,6 +9,7 @@ import Footer from './Footer.jsx'
 import Habitform from './Habitform.jsx';
 import Habitlist from './Habitlist.jsx';
 import HabitChart from './HabitChart.jsx';
+import SnowfallEffect from './SnowfallEffect.jsx';
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { convertToMonthly } from './utils';
 
@@ -30,7 +31,7 @@ function App() {
         setUser(user);
         
         if (!user) {
-          setHabits([]);
+          setHabits([]); 
           setProfile(null);
           setNeedsProfileSetup(false);
           setLoading(false);
@@ -96,37 +97,38 @@ function App() {
   }
 
   return(
-    <div style={{ background: darkMode ? '#1a1a1a' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        ${darkMode ? `
-          body { background: #1a1a1a; color: #fff; }
-          input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
-          input::placeholder { color: #999; }
-          .habit-card { background: #2a2a2a; color: #fff; }
-          .habit-form { background: #2a2a2a; }
-          button { background: #fff; color: #000; }
-          @media (max-width: 768px) {
-            .habit-list { padding: 10px; }
-            .habits-container { grid-template-columns: 1fr; }
+    <SnowfallEffect config={{ snowflakeCount: 100, color: '#FFFFFF' }}>
+      <div style={{ background: darkMode ? '#1a1a1a' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
-        ` : `
-          @media (max-width: 768px) {
-            .habit-list { padding: 10px; }
-            .habits-container { grid-template-columns: 1fr; }
-            main { padding: 0 10px; }
-          }
-        `}
-      `}</style>
+          ${darkMode ? `
+            body { background: #1a1a1a; color: #fff; }
+            input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
+            input::placeholder { color: #999; }
+            .habit-card { background: #2a2a2a; color: #fff; }
+            .habit-form { background: #2a2a2a; }
+            button { background: #fff; color: #000; }
+            @media (max-width: 768px) {
+              .habit-list { padding: 10px; }
+              .habits-container { grid-template-columns: 1fr; }
+            }
+          ` : `
+            @media (max-width: 768px) {
+              .habit-list { padding: 10px; }
+              .habits-container { grid-template-columns: 1fr; }
+              main { padding: 0 10px; }
+            }
+          `}
+        `}</style>
       
       <Header/>
       <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
         {error && (
           <div style={{ background: '#fee', border: '1px solid #fcc', color: '#c00', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontWeight: '600' }}>
-            ⚠️ {error}
+             {error}
           </div>
         )}
         
@@ -159,7 +161,8 @@ function App() {
         <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
       </main>
       <Footer/>
-    </div>
+      </div>
+    </SnowfallEffect>
   );
 }
 
