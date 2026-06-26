@@ -14,7 +14,8 @@ A React and Firebase app for tracking recurring spending habits and understandin
 - Daily habit snapshots for progress tracking over time
 - CSV export for Excel/Google Sheets and JSON export for backups
 - Loading skeleton and offline warning states
-- Dark mode and responsive layout
+- Consistent light/dark theme with shared design tokens
+- Responsive layout for desktop and mobile
 
 ## Tech Stack
 
@@ -40,6 +41,17 @@ The dev server runs at `http://localhost:5173` by default.
 npm run build
 npm run preview
 ```
+
+The build script uses Vite's runner config loader because the project path may contain spaces on Windows.
+
+## Theme System
+
+The dashboard uses app-level theme classes in `src/App.jsx`:
+
+- `theme-light`
+- `theme-dark`
+
+Shared colors are defined as CSS variables in `src/App.css`, then reused by forms, habit cards, charts, profile setup, warnings, and buttons. This keeps bright and dark mode consistent across nested components instead of relying on one-off inline styles.
 
 ## Firebase Notes
 
@@ -73,9 +85,10 @@ If this domain is missing, Google OAuth can fail in production even when it work
 
 1. Sign up or log in.
 2. Add habits immediately, or add income first if you want days-of-income insights.
-3. Filter habits by category.
-4. Review charts and the cost-in-days callouts.
-5. Export to CSV for spreadsheets or JSON for backup.
+3. Toggle light/dark mode from the dashboard header.
+4. Filter habits by category.
+5. Review charts and the cost-in-days callouts.
+6. Export to CSV for spreadsheets or JSON for backup.
 
 ## Available Scripts
 
