@@ -7,7 +7,7 @@ function Auth() {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [isSignupMode, setIsSignupMode] = useState(false);
-  const [currency, setCurrency] = useState("₹");
+  const [currency, setCurrency] = useState("\u20b9");
   const [userType, setUserType] = useState("student");
   const [income, setIncome] = useState("");
   const [incomeFrequency, setIncomeFrequency] = useState("monthly");
@@ -49,7 +49,7 @@ function Auth() {
       setPassword("");
       setIncome("");
       setBudget("");
-      setCurrency("₹");
+      setCurrency("\u20b9");
       setUserType("student");
       setIncomeFrequency("monthly");
       setIsSignupMode(false);
@@ -117,9 +117,8 @@ function Auth() {
           <h1 className="auth-title">Welcome Back</h1>
           <p className="auth-welcome-message">Logged in as {user.email}</p>
           <button
-            className="auth-button auth-button-primary"
+            className="auth-button auth-button-primary auth-full-width"
             onClick={handleLogout}
-            style={{ width: "100%", marginTop: "32px" }}
           >
             Logout
           </button>
@@ -169,9 +168,9 @@ function Auth() {
                 onChange={(e) => setCurrency(e.target.value)}
                 disabled={loading}
               >
-                <option value="₹">Currency - INR (₹)</option>
+                <option value="\u20b9">Currency - INR ({"\u20b9"})</option>
                 <option value="$">Currency - USD ($)</option>
-                <option value="€">Currency - EUR (€)</option>
+                <option value="\u20ac">Currency - EUR ({"\u20ac"})</option>
               </select>
             </div>
 
@@ -220,7 +219,7 @@ function Auth() {
                 disabled={loading}
                 min="0"
               />
-              <small style={{ color: '#999', marginTop: '4px' }}>Income and budget are optional. You can add them later for deeper insights.</small>
+              <small className="auth-field-hint">Income and budget are optional. You can add them later for deeper insights.</small>
             </div>
           </>
         )}

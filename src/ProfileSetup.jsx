@@ -3,7 +3,7 @@ import { saveGoogleUserProfile } from "./auth";
 import "./ProfileSetup.css";
 
 function ProfileSetup({ user, onComplete }) {
-  const [currency, setCurrency] = useState("₹");
+  const [currency, setCurrency] = useState("\u20b9");
   const [userType, setUserType] = useState("working");
   const [income, setIncome] = useState("");
   const [incomeFrequency, setIncomeFrequency] = useState("monthly");
@@ -105,9 +105,9 @@ function ProfileSetup({ user, onComplete }) {
             onChange={(e) => setCurrency(e.target.value)}
             disabled={loading}
           >
-            <option value="₹">INR (₹)</option>
+            <option value="\u20b9">INR ({"\u20b9"})</option>
             <option value="$">USD ($)</option>
-            <option value="€">EUR (€)</option>
+            <option value="\u20ac">EUR ({"\u20ac"})</option>
           </select>
         </div>
 

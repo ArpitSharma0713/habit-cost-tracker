@@ -43,7 +43,7 @@ export async function signup(email, password, profileData = {}) {
 
   await setDoc(doc(db, "users", user.uid), {
     email: user.email,
-    currency: profileData.currency || "₹",
+    currency: profileData.currency || "\u20b9",
     userType: profileData.userType || "student",
     income: profileData.income || 0,
     incomeFrequency: profileData.incomeFrequency || "monthly",
@@ -76,7 +76,7 @@ export async function saveGoogleUserProfile(user, profileData) {
     email: user.email,
     displayName: user.displayName || "",
     photoURL: user.photoURL || "",
-    currency: profileData.currency || "₹",
+    currency: profileData.currency || "\u20b9",
     userType: profileData.userType || "working",
     income: profileData.income || 0,
     incomeFrequency: profileData.incomeFrequency || "monthly",

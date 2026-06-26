@@ -8,7 +8,7 @@
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 24px;
-  color: #000;
+  color: var(--app-text);
 }
 
 .habit-filter-container {
@@ -19,7 +19,7 @@
 .habit-filter-title {
   margin: 0 0 12px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--app-muted);
   font-weight: 600;
 }
 
@@ -32,9 +32,9 @@
 
 .habit-filter-button {
   padding: 8px 16px;
-  background: #f5f5f5;
-  color: #000;
-  border: 1px solid #ddd;
+  background: var(--app-surface-muted);
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
   border-radius: 20px;
   cursor: pointer;
   font-weight: 600;
@@ -44,13 +44,17 @@
 }
 
 .habit-filter-button.active {
-  background: #000;
-  color: #fff;
-  border: none;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
+  border-color: var(--app-accent);
 }
 
 .habit-filter-button:hover {
-  border-color: #000;
+  border-color: var(--app-border-strong);
+}
+
+.habit-insights {
+  margin-bottom: 32px;
 }
 
 .habit-summary-grid {
@@ -61,51 +65,45 @@
 }
 
 .habit-summary-card {
-  background: #f5f5f5;
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
   padding: 16px 24px;
   border-radius: 8px;
+  box-shadow: var(--app-shadow);
 }
 
 .habit-summary-card h3 {
   margin: 0;
   font-size: 24px;
-  color: #000;
+  color: var(--app-text);
 }
 
 .habit-summary-card p {
   margin: 0 0 8px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--app-muted);
 }
 
-.habit-summary-card.dark {
-  background: #000;
-  color: #fff;
-}
-
-.habit-summary-card.dark p {
-  color: #ccc;
-}
-
-.habit-summary-card.dark h3 {
-  color: #fff;
-}
-
-.habit-insights {
-  margin-bottom: 32px;
+.habit-summary-card span {
+  display: block;
+  margin-top: 8px;
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .habit-time-hero {
-  background: #000;
-  color: #fff;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 20px;
+  box-shadow: var(--app-shadow);
 }
 
 .habit-time-hero p {
   margin: 0 0 8px 0;
-  color: #cfcfcf;
+  color: color-mix(in srgb, var(--app-accent-text) 78%, transparent);
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
@@ -114,7 +112,7 @@
 
 .habit-time-hero strong {
   display: block;
-  color: #fff;
+  color: var(--app-accent-text);
   font-size: clamp(32px, 6vw, 56px);
   line-height: 1;
   margin-bottom: 10px;
@@ -122,73 +120,63 @@
 
 .habit-time-hero span {
   display: block;
-  color: #ddd;
+  color: color-mix(in srgb, var(--app-accent-text) 82%, transparent);
   font-size: 15px;
   line-height: 1.5;
 }
 
-.habit-summary-card span {
-  display: block;
-  margin-top: 8px;
-  color: #666;
-  font-size: 13px;
-  font-weight: 600;
-}
-
 .habit-summary-card.budget-exceeded {
-  background: #fee;
-  border: 1px solid #fcc;
+  background: var(--app-danger-bg);
+  border-color: var(--app-danger-border);
 }
 
 .habit-summary-card.budget-warning {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
+  background: var(--app-warning-bg);
+  border-color: var(--app-warning-border);
 }
 
 .habit-summary-card.budget-exceeded p,
 .habit-summary-card.budget-exceeded h3,
 .habit-summary-card.budget-exceeded span {
-  color: #c00;
+  color: var(--app-danger-text);
 }
 
 .habit-summary-card.budget-warning p,
 .habit-summary-card.budget-warning h3,
 .habit-summary-card.budget-warning span {
-  color: #856404;
+  color: var(--app-warning-text);
+}
+
+.habit-warning-box,
+.habit-danger-box {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
 }
 
 .habit-warning-box {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-}
-
-.habit-warning-box p {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #856404;
-}
-
-.habit-warning-box strong {
-  font-weight: 700;
+  background: var(--app-warning-bg);
+  border: 1px solid var(--app-warning-border);
 }
 
 .habit-danger-box {
-  background: #fee;
-  border: 1px solid #fcc;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
+  background: var(--app-danger-bg);
+  border: 1px solid var(--app-danger-border);
+}
+
+.habit-warning-box p,
+.habit-danger-box p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.habit-warning-box p {
+  color: var(--app-warning-text);
 }
 
 .habit-danger-box p {
-  margin: 0;
-  color: #c00;
-  font-size: 15px;
-  font-weight: 600;
+  color: var(--app-danger-text);
 }
 
 .habit-export-actions {
@@ -201,8 +189,11 @@
 .no-habits {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--app-muted);
   font-size: 16px;
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
 }
 
 .habits-container {
@@ -212,11 +203,13 @@
 }
 
 .habit-card {
-  background: #fff;
-  border: 2px solid #e0e0e0;
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-left: 5px solid var(--app-accent);
   border-radius: 8px;
   padding: 20px;
   transition: all 0.3s ease;
+  box-shadow: var(--app-shadow);
 }
 
 .habit-card.pending {
@@ -224,71 +217,83 @@
 }
 
 .habit-card:hover {
-  border-color: #000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--app-border-strong);
+  transform: translateY(-4px);
+  box-shadow: var(--app-shadow-strong);
 }
 
 .habit-card h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #000;
+  color: var(--app-text);
 }
 
 .habit-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 .habit-category-badge {
-  background: #f5f5f5;
+  background: var(--app-surface-muted);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: var(--app-muted-strong);
 }
 
 .habit-cost-info {
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-border);
 }
 
 .habit-cost-info p {
   margin: 0;
   font-size: 15px;
-  color: #333;
+  color: var(--app-muted-strong);
   font-weight: 500;
 }
 
 .habit-card p {
   margin: 0 0 8px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--app-muted);
 }
 
 .habit-card strong {
-  color: #000;
+  color: var(--app-text);
   font-weight: 600;
 }
 
-.days-work {
-  background: #f0f0f0;
-  padding: 10px 12px;
-  border-radius: 6px;
-  margin: 12px 0;
-  font-size: 14px;
+.days-work,
+.time-cost-empty {
+  background: var(--app-surface-muted);
+  color: var(--app-muted-strong);
+  border-radius: 8px;
   font-weight: 600;
-  color: #333;
   text-align: center;
 }
 
+.days-work {
+  padding: 10px 12px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.time-cost-empty {
+  padding: 12px;
+  margin: 14px 0;
+  font-size: 13px;
+}
+
 .time-cost-callout {
-  background: #000;
-  color: #fff;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
   border-radius: 8px;
   padding: 14px;
   margin: 14px 0;
@@ -297,7 +302,7 @@
 .time-cost-callout span,
 .time-cost-callout small {
   display: block;
-  color: #d7d7d7;
+  color: color-mix(in srgb, var(--app-accent-text) 78%, transparent);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -306,21 +311,10 @@
 
 .time-cost-callout strong {
   display: block;
-  color: #fff;
+  color: var(--app-accent-text);
   font-size: 24px;
   line-height: 1.15;
   margin: 6px 0;
-}
-
-.time-cost-empty {
-  background: #f5f5f5;
-  color: #666;
-  border-radius: 8px;
-  padding: 12px;
-  margin: 14px 0;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
 }
 
 .habit-card-actions {
@@ -329,131 +323,96 @@
   margin-top: 16px;
 }
 
-.habit-card-button {
-  flex: 1;
-  padding: 10px 16px;
+.habit-card-button,
+.habit-export-button {
   font-size: 14px;
-  font-weight: 600;
-  border: none;
+  font-weight: 700;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: inherit;
 }
 
+.habit-card-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+}
+
+.habit-export-button {
+  padding: 12px 32px;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
+  border: 2px solid var(--app-accent);
+}
+
 .habit-card-button.primary {
-  background: #000;
-  color: #fff;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
+  border: 2px solid var(--app-accent);
 }
 
-.habit-card-button.primary:hover {
-  background: #1a1a1a;
+.habit-card-button.primary:hover,
+.habit-export-button:hover {
+  background: var(--app-accent-hover);
+  border-color: var(--app-accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--app-shadow);
 }
 
-.habit-card-button.secondary {
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
+.habit-card-button.secondary,
+.habit-export-button.secondary {
+  background: var(--app-surface);
+  color: var(--app-text);
+  border: 2px solid var(--app-border-strong);
 }
 
-.habit-card-button.secondary:hover {
-  background: #f5f5f5;
+.habit-card-button.secondary:hover,
+.habit-export-button.secondary:hover {
+  background: var(--app-surface-muted);
+  color: var(--app-text);
   transform: translateY(-2px);
 }
 
-.habit-card-button:active {
+.habit-card-button:active,
+.habit-export-button:active {
   transform: translateY(0);
 }
 
-.habit-card-button:disabled {
+.habit-card-button:disabled,
+.habit-export-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
 }
 
 .habit-edit-form {
-  background: #f9f9f9;
-  border: 2px solid #e0e0e0;
+  background: var(--app-surface-muted);
+  border: 2px solid var(--app-border);
   padding: 16px;
   border-radius: 6px;
   margin-bottom: 12px;
 }
 
-.habit-edit-input {
+.habit-edit-input,
+.habit-edit-select {
   width: 100%;
   padding: 10px 12px;
   font-size: 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--app-border);
   border-radius: 4px;
   font-family: inherit;
   margin-bottom: 12px;
   box-sizing: border-box;
+  background: var(--app-surface);
+  color: var(--app-text);
 }
 
-.habit-edit-input:focus {
-  outline: none;
-  border-color: #000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-
-.habit-edit-select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  font-size: 14px;
-  font-family: inherit;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-}
-
+.habit-edit-input:focus,
 .habit-edit-select:focus {
   outline: none;
-  border-color: #000;
-}
-
-.habit-export-button {
-  padding: 12px 32px;
-  font-size: 14px;
-  font-weight: 600;
-  background: #000;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  letter-spacing: 0.5px;
-}
-
-.habit-export-button.secondary {
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
-}
-
-.habit-export-button:hover {
-  background: #1a1a1a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.habit-export-button.secondary:hover {
-  background: #f5f5f5;
-  color: #000;
-}
-
-.habit-export-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.habit-export-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
+  border-color: var(--app-border-strong);
+  box-shadow: 0 0 0 3px var(--app-focus);
 }
 
 @media (max-width: 768px) {
@@ -466,16 +425,13 @@
     margin-bottom: 20px;
   }
 
-  .habits-container {
+  .habits-container,
+  .habit-summary-grid {
     grid-template-columns: 1fr;
   }
 
   .habit-card {
     padding: 16px;
-  }
-
-  .habit-summary-grid {
-    grid-template-columns: 1fr;
   }
 }
 

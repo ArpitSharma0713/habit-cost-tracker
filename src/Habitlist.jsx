@@ -203,44 +203,41 @@ function Habitlist({ habits, profile, setHabits }) {
               return (
                 <div className="habit-card" key={habit.id || index}>
                   <h3>Edit Habit</h3>
-                  <div className="auth-input-group" style={{ marginBottom: '16px' }}>
+                  <div className="habit-edit-form">
                     <input
-                      className="auth-input"
+                      className="habit-edit-input"
                       type="text"
                       value={editForm.name}
                       placeholder="Habit name"
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      style={{ marginBottom: '12px' }}
                     />
                     <input
-                      className="auth-input"
+                      className="habit-edit-input"
                       type="number"
                       value={editForm.cost}
                       placeholder="Cost per occurrence"
                       onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
-                      style={{ marginBottom: '12px' }}
                     />
                     <input
-                      className="auth-input"
+                      className="habit-edit-input"
                       type="number"
                       value={editForm.frequency}
                       placeholder="Frequency"
                       onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value })}
-                      style={{ marginBottom: '12px' }}
                     />
                     <select
+                      className="habit-edit-select"
                       value={editForm.frequencyType}
                       onChange={(e) => setEditForm({ ...editForm, frequencyType: e.target.value })}
-                      style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit', marginBottom: '12px' }}
                     >
                       <option value="daily">Daily</option>
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                     </select>
                     <select
+                      className="habit-edit-select"
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
                     >
                       <option value="Food">Food</option>
                       <option value="Transport">Transport</option>

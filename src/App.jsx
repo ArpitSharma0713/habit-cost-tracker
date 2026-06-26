@@ -14,7 +14,7 @@ import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/fire
 import { convertToMonthly } from './utils';
 
 const DEFAULT_PROFILE = {
-  currency: "₹",
+  currency: "\u20b9",
   userType: "working",
   income: 0,
   incomeFrequency: "monthly",
@@ -136,6 +136,9 @@ function App() {
     };
   }, []);
 
+  const themeClass = darkMode ? "theme-dark" : "theme-light";
+  const currency = profile?.currency || "\u20b9";
+
   if (loading) {
     return (
       <div className="app-loading-shell">
@@ -161,100 +164,78 @@ function App() {
 
   if (showProfileSetup) {
     return (
-      <ProfileSetup
-        user={user}
-        onComplete={(savedProfile) => {
-          if (savedProfile) {
-            setProfile({ ...DEFAULT_PROFILE, ...savedProfile });
-          }
-          setNeedsProfileSetup(false);
-          setShowProfileSetup(false);
-        }}
-      />
+      <div className={`app-shell ${themeClass}`}>
+        <ProfileSetup
+          user={user}
+          onComplete={(savedProfile) => {
+            if (savedProfile) {
+              setProfile({ ...DEFAULT_PROFILE, ...savedProfile });
+            }
+            setNeedsProfileSetup(false);
+            setShowProfileSetup(false);
+          }}
+        />
+      </div>
     );
   }
 
   return(
-    <SnowfallEffect config={{ snowflakeCount: 100, color: '#FFFFFF' }}>
-      <div style={{ background: darkMode ? '#1a1a1a' : '#fff', color: darkMode ? '#fff' : '#000', minHeight: '100vh' }}>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          ${darkMode ? `
-            body { background: #1a1a1a; color: #fff; }
-            input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
-            input::placeholder { color: #999; }
-            .habit-card { background: #2a2a2a; color: #fff; }
-            .habit-form { background: #2a2a2a; }
-            button { background: #fff; color: #000; }
-            @media (max-width: 768px) {
-              .habit-list { padding: 10px; }
-              .habits-container { grid-template-columns: 1fr; }
-            }
-          ` : `
-            @media (max-width: 768px) {
-              .habit-list { padding: 10px; }
-              .habits-container { grid-template-columns: 1fr; }
-              main { padding: 0 10px; }
-            }
-          `}
-        `}</style>
-
-      <Header/>
-      <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-        {error && (
-          <div style={{ background: '#fee', border: '1px solid #fcc', color: '#c00', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontWeight: '600' }}>
-             {error}
-          </div>
-        )}
-
-        {!isOnline && (
-          <div className="app-offline-banner">
-            You are offline. Existing data may stay visible, but changes need a connection to save.
-          </div>
-        )}
-
-        {needsProfileSetup && (
-          <div className="app-profile-prompt">
-            <div>
-              <strong>Add income later, track habits now.</strong>
-              <p>Income and budget are optional. Add them when you want the app to calculate the cost in days of your time.</p>
+    <SnowfallEffect config={{ snowflakeCount: 100, color: darkMode ? '#FFFFFF' : '#D7DDE5' }}>
+      <div className={`app-shell ${themeClass}`}>
+        <Header/>
+        <main className="app-main">
+          {error && (
+            <div className="app-error-banner">
+              {error}
             </div>
-            <button onClick={() => setShowProfileSetup(true)}>Add Profile Details</button>
-          </div>
-        )}
+          )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`, background: darkMode ? '#0a0a0a' : '#f9f9f9', borderRadius: '8px', marginBottom: '20px' }}>
-          <div>
-            <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>Welcome {user.email}</p>
-            {profile && profile.income > 0 && (
-              <div style={{ marginTop: '8px', fontSize: '14px', color: darkMode ? '#ccc' : '#666' }}>
-                <p style={{ margin: '4px 0' }}>
-                  {profile.userType === "student" ? "Pocket Money" : "Salary"}: {profile.currency} {convertToMonthly(profile.income, profile.incomeFrequency).toFixed(2)}/month
-                </p>
+          {!isOnline && (
+            <div className="app-offline-banner">
+              You are offline. Existing data may stay visible, but changes need a connection to save.
+            </div>
+          )}
+
+          {needsProfileSetup && (
+            <div className="app-profile-prompt">
+              <div>
+                <strong>Add income later, track habits now.</strong>
+                <p>Income and budget are optional. Add them when you want the app to calculate the cost in days of your time.</p>
               </div>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              style={{ padding: '8px 16px', background: darkMode ? '#fff' : '#000', color: darkMode ? '#000' : '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-            >
-              {darkMode ? ' Light' : ' Dark'}
-            </button>
-            <button onClick={logout} style={{ padding: '8px 16px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}>
-              Logout
-            </button>
-          </div>
-        </div>
+              <button className="app-button primary" onClick={() => setShowProfileSetup(true)}>Add Profile Details</button>
+            </div>
+          )}
 
-        <Habitform setHabits={setHabits} currency={profile?.currency || '₹'} />
-        <HabitChart habits={habits} history={habitHistory} currency={profile?.currency || '₹'} />
-        <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
-      </main>
-      <Footer/>
+          <div className="app-user-bar">
+            <div>
+              <p className="app-welcome">Welcome {user.email}</p>
+              {profile && profile.income > 0 && (
+                <div className="app-profile-meta">
+                  <p>
+                    {profile.userType === "student" ? "Pocket Money" : "Salary"}: {currency} {convertToMonthly(profile.income, profile.incomeFrequency).toFixed(2)}/month
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="app-actions">
+              <button
+                className="app-button secondary"
+                onClick={() => setDarkMode(!darkMode)}
+                aria-pressed={darkMode}
+              >
+                {darkMode ? 'Light' : 'Dark'}
+              </button>
+              <button className="app-button primary" onClick={logout}>
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <Habitform setHabits={setHabits} currency={currency} />
+          <HabitChart habits={habits} history={habitHistory} currency={currency} />
+          <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
+        </main>
+        <Footer/>
       </div>
     </SnowfallEffect>
   );

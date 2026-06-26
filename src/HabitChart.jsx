@@ -14,10 +14,20 @@ import {
 } from "recharts";
 import { getMonthlyCost, getYearlyCost } from "./utils";
 
-function HabitChart({ habits, history = [], currency = "₹" }) {
+const CHART_COLORS = [
+  "var(--app-accent)",
+  "#4f7cac",
+  "#d18f3f",
+  "#6a9f58",
+  "#b6617a",
+  "#6f64b4",
+  "#7a8794"
+];
+
+function HabitChart({ habits, history = [], currency = "\u20b9" }) {
   if (!habits || habits.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+      <div className="chart-empty-state">
         <p>Add habits to see charts</p>
       </div>
     );
@@ -46,26 +56,37 @@ function HabitChart({ habits, history = [], currency = "₹" }) {
     habits: Number(snapshot.habitCount || 0)
   }));
 
-  const COLORS = ['#000000', '#333333', '#666666', '#999999', '#cccccc', '#111111', '#222222'];
+  const tooltipStyle = {
+    background: "var(--app-surface-raised)",
+    border: "1px solid var(--app-border)",
+    borderRadius: 8,
+    color: "var(--app-text)",
+    boxShadow: "var(--app-shadow)"
+  };
+
+  const axisProps = {
+    stroke: "var(--app-muted)",
+    tick: { fill: "var(--app-muted)", fontSize: 12 }
+  };
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-        <div style={{ background: '#f9f9f9', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center', color: '#000' }}>Yearly Cost per Habit</h4>
+    <div className="chart-section">
+      <div className="chart-grid">
+        <div className="chart-card">
+          <h4>Yearly Cost per Habit</h4>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} style={{ fontSize: '12px' }} />
-              <YAxis />
-              <Tooltip formatter={(value) => `${currency}${value.toFixed(2)}`} />
-              <Bar dataKey="yearly" fill="#000" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} {...axisProps} />
+              <YAxis {...axisProps} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${currency}${value.toFixed(2)}`} />
+              <Bar dataKey="yearly" fill="var(--app-accent)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {pieData.length > 0 && (
-          <div style={{ background: '#f9f9f9', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center', color: '#000' }}>Spending by Category</h4>
+          <div className="chart-card">
+            <h4>Spending by Category</h4>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -75,33 +96,33 @@ function HabitChart({ habits, history = [], currency = "₹" }) {
                   labelLine={false}
                   label={(entry) => `${entry.name}: ${currency}${entry.value}`}
                   outerRadius={80}
-                  fill="#000"
+                  fill="var(--app-accent)"
                   dataKey="value"
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${currency}${value.toFixed(2)}`} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${currency}${value.toFixed(2)}`} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         )}
 
-        <div style={{ background: '#f9f9f9', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center', color: '#000' }}>Monthly Trend</h4>
+        <div className="chart-card">
+          <h4>Monthly Trend</h4>
           {trendData.length > 1 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip formatter={(value) => `${currency}${Number(value).toFixed(2)}`} />
-                <Line type="monotone" dataKey="monthly" stroke="#000" strokeWidth={3} dot={{ r: 4 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--app-chart-grid)" />
+                <XAxis dataKey="date" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${currency}${Number(value).toFixed(2)}`} />
+                <Line type="monotone" dataKey="monthly" stroke="var(--app-accent)" strokeWidth={3} dot={{ r: 4, fill: "var(--app-accent)" }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#777', fontWeight: 600, padding: '0 1rem' }}>
+            <div className="chart-empty-trend">
               Your trend will appear after habit changes are saved on more than one day.
             </div>
           )}

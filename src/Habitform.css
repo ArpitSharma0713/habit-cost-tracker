@@ -1,17 +1,17 @@
 .habit-form {
-  background: #fff;
+  background: var(--app-surface-raised);
   padding: 24px;
   border-radius: 8px;
-  border: 2px solid #e0e0e0;
+  border: 1px solid var(--app-border);
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--app-shadow);
 }
 
 .habit-form h2 {
   font-size: 20px;
   font-weight: 600;
   margin: 0 0 20px 0;
-  color: #000;
+  color: var(--app-text);
 }
 
 .form-group {
@@ -23,30 +23,30 @@
 .form-group select {
   padding: 12px 16px;
   font-size: 14px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--app-border);
   border-radius: 6px;
   font-family: inherit;
-  background: #fff;
-  color: #000;
+  background: var(--app-surface);
+  color: var(--app-text);
   transition: all 0.3s ease;
   box-sizing: border-box;
 }
 
 .form-group input::placeholder {
-  color: #999;
+  color: var(--app-muted);
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  border-color: var(--app-border-strong);
+  box-shadow: 0 0 0 3px var(--app-focus);
 }
 
 .form-group input:disabled,
 .form-group select:disabled {
-  background: #f5f5f5;
-  color: #999;
+  background: var(--app-surface-muted);
+  color: var(--app-muted);
   cursor: not-allowed;
 }
 
@@ -54,27 +54,26 @@
   width: 100%;
   padding: 12px 24px;
   font-size: 15px;
-  font-weight: 600;
-  background: #000;
-  color: #fff;
-  border: none;
+  font-weight: 700;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
+  border: 2px solid var(--app-accent);
   border-radius: 6px;
   cursor: pointer;
   margin-top: 8px;
   transition: all 0.3s ease;
   font-family: inherit;
-  letter-spacing: 0.5px;
 }
 
 .add-btn:hover {
-  background: #1a1a1a;
+  background: var(--app-accent-hover);
+  border-color: var(--app-accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--app-shadow);
 }
 
 .add-btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .add-btn:disabled {

@@ -92,7 +92,6 @@ function Habitform({ setHabits, currency = "₹" }) {
           value={frequencyType}
           onChange={(e) => setFrequencyType(e.target.value)}
           disabled={saving}
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
         >
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
@@ -102,7 +101,6 @@ function Habitform({ setHabits, currency = "₹" }) {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           disabled={saving}
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
         >
           <option value="Food">Food</option>
           <option value="Transport">Transport</option>
