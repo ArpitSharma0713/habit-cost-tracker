@@ -10,61 +10,104 @@ import Habitform from './Habitform.jsx';
 import Habitlist from './Habitlist.jsx';
 import HabitChart from './HabitChart.jsx';
 import SnowfallEffect from './SnowfallEffect.jsx';
-import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import { convertToMonthly } from './utils';
+
+const DEFAULT_PROFILE = {
+  currency: "₹",
+  userType: "working",
+  income: 0,
+  incomeFrequency: "monthly",
+  budget: null
+};
 
 function App() {
   const [user, setUser] = useState(null);
   const [habits, setHabits] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const [habitHistory, setHabitHistory] = useState([]);
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    let unsubscribeHabits = null;
+    let unsubscribeHistory = null;
+
+    const unsubscribeAuth = auth.onAuthStateChanged(async (currentUser) => {
+      unsubscribeHabits?.();
+      unsubscribeHistory?.();
+      unsubscribeHabits = null;
+      unsubscribeHistory = null;
+
       try {
-        setUser(user);
-        
-        if (!user) {
-          setHabits([]); 
-          setProfile(null);
+        setUser(currentUser);
+
+        if (!currentUser) {
+          setHabits([]);
+          setHabitHistory([]);
+          setProfile(DEFAULT_PROFILE);
           setNeedsProfileSetup(false);
+          setShowProfileSetup(false);
           setLoading(false);
           return;
         }
 
-        const docRef = doc(db, "users", user.uid);
-        const snap = await getDoc(docRef);
-        
-        if (snap.exists()) {
-          setProfile(snap.data());
+        const profileRef = doc(db, "users", currentUser.uid);
+        const profileSnap = await getDoc(profileRef);
+
+        if (profileSnap.exists()) {
+          setProfile({ ...DEFAULT_PROFILE, ...profileSnap.data() });
           setNeedsProfileSetup(false);
-
-          const q = query(
-            collection(db, "habits"),
-            where("userId", "==", user.uid)
-          );
-
-          const snapshot = await getDocs(q);
-
-          const habitsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-
-          setHabits(habitsData);
-          setLoading(false);
         } else {
-          setProfile(null);
+          setProfile(DEFAULT_PROFILE);
           setNeedsProfileSetup(true);
-          setHabits([]);
-          setLoading(false);
         }
+
+        const habitsQuery = query(
+          collection(db, "habits"),
+          where("userId", "==", currentUser.uid)
+        );
+
+        unsubscribeHabits = onSnapshot(
+          habitsQuery,
+          (snapshot) => {
+            const habitsData = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            setHabits(habitsData);
+            setLoading(false);
+          },
+          (err) => {
+            console.error("Error loading habits:", err);
+            setError("Failed to load habits. Check your connection and try again.");
+            setLoading(false);
+          }
+        );
+
+        const historyQuery = query(
+          collection(db, "habitSnapshots"),
+          where("userId", "==", currentUser.uid)
+        );
+
+        unsubscribeHistory = onSnapshot(
+          historyQuery,
+          (snapshot) => {
+            const historyData = snapshot.docs
+              .map((doc) => ({ id: doc.id, ...doc.data() }))
+              .sort((a, b) => a.date.localeCompare(b.date));
+
+            setHabitHistory(historyData);
+          },
+          (err) => {
+            console.warn("Unable to load habit history:", err);
+          }
+        );
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Failed to load data. Please try again.");
@@ -72,27 +115,62 @@ function App() {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      unsubscribeHabits?.();
+      unsubscribeHistory?.();
+    };
   }, []);
+
+  useEffect(() => {
+    function updateOnlineStatus() {
+      setIsOnline(navigator.onLine);
+    }
+
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="app-loading-shell">
+        <div className="app-loading-card">
+          <div className="app-loading-title" />
+          <div className="app-loading-line" />
+          <div className="app-skeleton-grid">
+            <div className="app-skeleton-card" />
+            <div className="app-skeleton-card" />
+            <div className="app-skeleton-card" />
+          </div>
+          <div className="app-loading-copy">
+            Loading your habits. First load can take a moment on slower networks.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Auth />;
   }
 
-  if (needsProfileSetup) {
-    return <ProfileSetup user={user} onComplete={() => setNeedsProfileSetup(false)} />;
-  }
-
-  if (loading) {
+  if (showProfileSetup) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#fff' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 16px 0' }}>Loading your habits...</h2>
-          <div style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>
-            <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #000', borderRadius: '50%' }} />
-          </div>
-        </div>
-      </div>
+      <ProfileSetup
+        user={user}
+        onComplete={(savedProfile) => {
+          if (savedProfile) {
+            setProfile({ ...DEFAULT_PROFILE, ...savedProfile });
+          }
+          setNeedsProfileSetup(false);
+          setShowProfileSetup(false);
+        }}
+      />
     );
   }
 
@@ -123,7 +201,7 @@ function App() {
             }
           `}
         `}</style>
-      
+
       <Header/>
       <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
         {error && (
@@ -131,11 +209,27 @@ function App() {
              {error}
           </div>
         )}
-        
+
+        {!isOnline && (
+          <div className="app-offline-banner">
+            You are offline. Existing data may stay visible, but changes need a connection to save.
+          </div>
+        )}
+
+        {needsProfileSetup && (
+          <div className="app-profile-prompt">
+            <div>
+              <strong>Add income later, track habits now.</strong>
+              <p>Income and budget are optional. Add them when you want the app to calculate the cost in days of your time.</p>
+            </div>
+            <button onClick={() => setShowProfileSetup(true)}>Add Profile Details</button>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`, background: darkMode ? '#0a0a0a' : '#f9f9f9', borderRadius: '8px', marginBottom: '20px' }}>
           <div>
             <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>Welcome {user.email}</p>
-            {profile && (
+            {profile && profile.income > 0 && (
               <div style={{ marginTop: '8px', fontSize: '14px', color: darkMode ? '#ccc' : '#666' }}>
                 <p style={{ margin: '4px 0' }}>
                   {profile.userType === "student" ? "Pocket Money" : "Salary"}: {profile.currency} {convertToMonthly(profile.income, profile.incomeFrequency).toFixed(2)}/month
@@ -144,8 +238,8 @@ function App() {
             )}
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              onClick={() => setDarkMode(!darkMode)} 
+            <button
+              onClick={() => setDarkMode(!darkMode)}
               style={{ padding: '8px 16px', background: darkMode ? '#fff' : '#000', color: darkMode ? '#000' : '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
             >
               {darkMode ? ' Light' : ' Dark'}
@@ -155,9 +249,9 @@ function App() {
             </button>
           </div>
         </div>
-        
+
         <Habitform setHabits={setHabits} currency={profile?.currency || '₹'} />
-        <HabitChart habits={habits} currency={profile?.currency || '₹'} />
+        <HabitChart habits={habits} history={habitHistory} currency={profile?.currency || '₹'} />
         <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
       </main>
       <Footer/>

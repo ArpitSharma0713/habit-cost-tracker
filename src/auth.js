@@ -1,9 +1,12 @@
-import {auth, db} from "./firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { signOut } from "firebase/auth";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { auth, db } from "./firebase";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export function getErrorMessage(code) {
   switch (code) {
@@ -34,39 +37,37 @@ export function getErrorMessage(code) {
   }
 }
 
-export async function signup(email, password, profileData = {}){
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    await setDoc(doc(db, "users", user.uid), {
-      email: user.email,
-      currency: profileData.currency || "₹",
-      userType: profileData.userType || "student",
-      income: profileData.income || 0,
-      incomeFrequency: profileData.incomeFrequency || "monthly",
-      budget: profileData.budget ? Number(profileData.budget) : null,
-      createdAt: new Date(),
-      authMethod: "email"
-    });
-    
-    return userCredential;
+export async function signup(email, password, profileData = {}) {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+
+  await setDoc(doc(db, "users", user.uid), {
+    email: user.email,
+    currency: profileData.currency || "₹",
+    userType: profileData.userType || "student",
+    income: profileData.income || 0,
+    incomeFrequency: profileData.incomeFrequency || "monthly",
+    budget: profileData.budget ? Number(profileData.budget) : null,
+    createdAt: new Date(),
+    authMethod: "email"
+  });
+
+  return userCredential;
 }
 
 export function login(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
 }
 
-export async function loginWithGoogle(){
+export async function loginWithGoogle() {
   const provider = new GoogleAuthProvider();
   return signInWithPopup(auth, provider);
 }
 
 export async function createGoogleUserProfile(user) {
   const userRef = doc(db, "users", user.uid);
-  
-  const { getDoc } = await import("firebase/firestore");
   const snap = await getDoc(userRef);
-  
+
   return !snap.exists();
 }
 
@@ -81,7 +82,7 @@ export async function saveGoogleUserProfile(user, profileData) {
     incomeFrequency: profileData.incomeFrequency || "monthly",
     budget: profileData.budget ? Number(profileData.budget) : null,
     createdAt: new Date(),
-    authMethod: "google"
+    authMethod: user.providerData?.some(provider => provider.providerId === "google.com") ? "google" : "email"
   });
 }
 

@@ -74,15 +74,73 @@ export function exportHabitsToJSON(habits, profile = null) {
   return JSON.stringify(exportData, null, 2);
 }
 
-export function downloadJSON(jsonString, filename = "habits-export.json") {
+function escapeCSVValue(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  const stringValue = String(value);
+
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replaceAll('"', '""')}"`;
+  }
+
+  return stringValue;
+}
+
+export function exportHabitsToCSV(habits, profile = null) {
+  const headers = [
+    "Export Date",
+    "Name",
+    "Category",
+    "Cost",
+    "Frequency",
+    "Frequency Type",
+    "Monthly Cost",
+    "Yearly Cost",
+    "Currency",
+    "Income",
+    "Income Frequency",
+    "Budget"
+  ];
+
+  const rows = habits.map((habit) => [
+    new Date().toISOString(),
+    habit.name,
+    habit.category || "Other",
+    habit.cost,
+    habit.frequency,
+    habit.frequencyType || "weekly",
+    getMonthlyCost(habit).toFixed(2),
+    getYearlyCost(habit).toFixed(2),
+    profile?.currency || "",
+    profile?.income || "",
+    profile?.incomeFrequency || "",
+    profile?.budget || ""
+  ]);
+
+  return [headers, ...rows]
+    .map((row) => row.map(escapeCSVValue).join(","))
+    .join("\n");
+}
+
+function downloadText(content, filename, mimeType) {
   const element = document.createElement("a");
   element.setAttribute(
     "href",
-    "data:text/plain;charset=utf-8," + encodeURIComponent(jsonString)
+    `data:${mimeType};charset=utf-8,` + encodeURIComponent(content)
   );
   element.setAttribute("download", filename);
   element.style.display = "none";
   document.body.appendChild(element);
   element.click();
   document.body.removeChild(element);
+}
+
+export function downloadJSON(jsonString, filename = "habits-export.json") {
+  downloadText(jsonString, filename, "application/json");
+}
+
+export function downloadCSV(csvString, filename = "habits-export.csv") {
+  downloadText(csvString, filename, "text/csv");
 }

@@ -21,12 +21,17 @@ function Auth() {
     setSuccess("");
 
     if (!email || !password) {
-      setError("Please fill in all fields");
+      setError("Please fill in email and password");
       return;
     }
 
-    if (!income || income <= 0) {
-      setError("Please enter a valid income");
+    if (income && Number(income) <= 0) {
+      setError("Income must be greater than 0 if provided");
+      return;
+    }
+
+    if (budget && Number(budget) <= 0) {
+      setError("Budget must be greater than 0 if provided");
       return;
     }
 
@@ -35,7 +40,7 @@ function Auth() {
       await signup(email, password, {
         currency,
         userType,
-        income: Number(income),
+        income: income ? Number(income) : 0,
         incomeFrequency,
         budget: budget ? Number(budget) : null
       });
@@ -88,7 +93,7 @@ function Auth() {
       const result = await loginWithGoogle();
       const googleUser = result.user;
       setUser({ email: googleUser.email });
-      setSuccess("Google login successful! Setting up your profile...");
+      setSuccess("Google login successful!");
     } catch (err) {
       setError(getErrorMessage(err.code));
     } finally {
@@ -111,8 +116,8 @@ function Auth() {
         <div className="auth-card">
           <h1 className="auth-title">Welcome Back</h1>
           <p className="auth-welcome-message">Logged in as {user.email}</p>
-          <button 
-            className="auth-button auth-button-primary" 
+          <button
+            className="auth-button auth-button-primary"
             onClick={handleLogout}
             style={{ width: "100%", marginTop: "32px" }}
           >
@@ -129,10 +134,10 @@ function Auth() {
         <h1 className="auth-title">
           {isSignupMode ? "Create Account" : "Login"}
         </h1>
-        
+
         {error && <div className="auth-error-message">{error}</div>}
         {success && <div className="auth-success-message">{success}</div>}
-        
+
         <div className="auth-input-group">
           <input
             className="auth-input"
@@ -143,7 +148,7 @@ function Auth() {
             disabled={loading}
           />
         </div>
-        
+
         <div className="auth-input-group">
           <input
             className="auth-input"
@@ -158,9 +163,9 @@ function Auth() {
         {isSignupMode && (
           <>
             <div className="auth-input-group">
-              <select 
+              <select
                 className="auth-input"
-                value={currency} 
+                value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
                 disabled={loading}
               >
@@ -171,9 +176,9 @@ function Auth() {
             </div>
 
             <div className="auth-input-group">
-              <select 
+              <select
                 className="auth-input"
-                value={userType} 
+                value={userType}
                 onChange={(e) => setUserType(e.target.value)}
                 disabled={loading}
               >
@@ -186,7 +191,7 @@ function Auth() {
               <input
                 className="auth-input"
                 type="number"
-                placeholder={userType === "student" ? "Pocket Money (monthly)" : "Monthly Salary"}
+                placeholder={userType === "student" ? "Pocket Money (optional)" : "Monthly Salary (optional)"}
                 value={income}
                 onChange={(e) => setIncome(e.target.value)}
                 disabled={loading}
@@ -194,9 +199,9 @@ function Auth() {
             </div>
 
             <div className="auth-input-group">
-              <select 
+              <select
                 className="auth-input"
-                value={incomeFrequency} 
+                value={incomeFrequency}
                 onChange={(e) => setIncomeFrequency(e.target.value)}
                 disabled={loading}
               >
@@ -215,7 +220,7 @@ function Auth() {
                 disabled={loading}
                 min="0"
               />
-              <small style={{ color: '#999', marginTop: '4px' }}>Budget is optional and helps track spending limits</small>
+              <small style={{ color: '#999', marginTop: '4px' }}>Income and budget are optional. You can add them later for deeper insights.</small>
             </div>
           </>
         )}
@@ -223,8 +228,8 @@ function Auth() {
         <div className="auth-button-group">
           {isSignupMode ? (
             <>
-              <button 
-                className="auth-button auth-button-secondary" 
+              <button
+                className="auth-button auth-button-secondary"
                 onClick={() => {
                   setIsSignupMode(false);
                   setError("");
@@ -234,8 +239,8 @@ function Auth() {
               >
                 Back
               </button>
-              <button 
-                className="auth-button auth-button-primary" 
+              <button
+                className="auth-button auth-button-primary"
                 onClick={handleSignup}
                 disabled={loading}
               >
@@ -244,15 +249,15 @@ function Auth() {
             </>
           ) : (
             <>
-              <button 
-                className="auth-button auth-button-secondary" 
+              <button
+                className="auth-button auth-button-secondary"
                 onClick={handleLogin}
                 disabled={loading}
               >
                 {loading ? "Logging in..." : "Login"}
               </button>
-              <button 
-                className="auth-button auth-button-primary" 
+              <button
+                className="auth-button auth-button-primary"
                 onClick={() => {
                   setIsSignupMode(true);
                   setError("");
@@ -268,7 +273,7 @@ function Auth() {
 
         <div className="auth-divider">OR</div>
 
-        <button 
+        <button
           className="auth-google-button"
           onClick={handleGoogleLogin}
           disabled={loading}
@@ -279,7 +284,7 @@ function Auth() {
         {!isSignupMode && (
           <div className="auth-mode-toggle">
             New user?
-            <button 
+            <button
               onClick={() => {
                 setIsSignupMode(true);
                 setError("");

@@ -1,5 +1,5 @@
 import Snowfall from 'react-snowfall';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 function SnowfallEffect({ children, config = {} }) {
   const snowfallRef = useRef(null);

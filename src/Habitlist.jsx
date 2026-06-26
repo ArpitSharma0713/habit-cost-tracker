@@ -1,332 +1,324 @@
-import { db } from "./firebase";
-import { doc, deleteDoc } from "firebase/firestore";
-import { updateDoc } from "firebase/firestore";
 import { useState } from "react";
-import { getMonthlyCost, getYearlyCost, convertToMonthly, checkBudgetStatus, exportHabitsToJSON, downloadJSON } from "./utils";
+import { db, auth } from "./firebase";
+import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { saveDailyHabitSnapshot } from "./history";
+import {
+  getMonthlyCost,
+  getYearlyCost,
+  convertToMonthly,
+  checkBudgetStatus,
+  exportHabitsToCSV,
+  exportHabitsToJSON,
+  downloadCSV,
+  downloadJSON
+} from "./utils";
 import "./Habitlist.css";
 
-function Habitlist({habits, profile, setHabits}){
-    const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
-    const [selectedCategory, setSelectedCategory] = useState("All");
-    
-    const categories = ["All", "Food", "Transport", "Subscriptions", "Entertainment", "Health", "Shopping", "Other"];
-    const filteredHabits = selectedCategory === "All" ? habits : habits.filter(h => h.category === selectedCategory);
-    
-    const totalMonthly = filteredHabits.reduce((sum, h) => sum + getMonthlyCost(h), 0);
-    const totalYearly = filteredHabits.reduce((sum, h) => sum + getYearlyCost(h), 0);
-    
-    const monthlyIncome = profile ? convertToMonthly(profile.income, profile.incomeFrequency) : 0;
-    const dailyIncome = monthlyIncome / 30;
-    
-    const daysLostPerMonth = dailyIncome ? (totalMonthly / dailyIncome) : 0;
-    
-    const budgetStatus = profile?.budget ? checkBudgetStatus(totalMonthly, profile.budget) : null;
-    
-    const topHabit = filteredHabits.reduce((max, h) => {
-      const maxCost = getMonthlyCost(max);
-      const hCost = getMonthlyCost(h);
-      return hCost > maxCost ? h : max;
-    }, filteredHabits[0] || {});
-    
-    async function handleDelete(id) {
-      try {
-        await deleteDoc(doc(db, "habits", id));
-        setHabits(prev => prev.filter(h => h.id !== id));
-      } catch (error) {
-        console.error(error);
-        alert("Error deleting habit");
-      }
+function Habitlist({ habits, profile, setHabits }) {
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const categories = ["All", "Food", "Transport", "Subscriptions", "Entertainment", "Health", "Shopping", "Other"];
+  const filteredHabits = selectedCategory === "All" ? habits : habits.filter(h => h.category === selectedCategory);
+  const currency = profile?.currency || "₹";
+  const incomeLabel = profile?.userType === "student" ? "pocket money" : "salary";
+
+  const totalMonthly = filteredHabits.reduce((sum, h) => sum + getMonthlyCost(h), 0);
+  const totalYearly = filteredHabits.reduce((sum, h) => sum + getYearlyCost(h), 0);
+
+  const monthlyIncome = profile?.income ? convertToMonthly(profile.income, profile.incomeFrequency) : 0;
+  const dailyIncome = monthlyIncome / 30;
+  const daysLostPerMonth = dailyIncome ? (totalMonthly / dailyIncome) : 0;
+  const budgetStatus = profile?.budget ? checkBudgetStatus(totalMonthly, profile.budget) : null;
+
+  async function handleDelete(id) {
+    const habitToDelete = habits.find(habit => habit.id === id);
+
+    if (!habitToDelete || habitToDelete.pending) {
+      return;
     }
 
-    async function handleEdit(id, updatedHabit) {
-      try {
-        const habitRef = doc(db, "habits", id);
-        await updateDoc(habitRef, updatedHabit);
-        setHabits(prev =>
-          prev.map(h =>
-            h.id === id ? { ...h, ...updatedHabit } : h
-          )
-        );
-        setEditingId(null);
-      } catch (error) {
-        console.error(error);
-        alert("Error updating habit");
-      }
-    }
-
-    function startEdit(habit) {
-      setEditingId(habit.id);
-      setEditForm({ 
-        name: habit.name, 
-        cost: habit.cost, 
-        frequency: habit.frequency, 
-        frequencyType: habit.frequencyType || "daily",
-        category: habit.category || "Food" 
+    try {
+      await deleteDoc(doc(db, "habits", id));
+      setHabits(prev => {
+        const nextHabits = prev.filter(h => h.id !== id);
+        saveDailyHabitSnapshot(auth.currentUser?.uid, nextHabits).catch(console.warn);
+        return nextHabits;
       });
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting habit");
     }
+  }
 
-    function cancelEdit() {
+  async function handleEdit(id, updatedHabit) {
+    try {
+      const habitRef = doc(db, "habits", id);
+      await updateDoc(habitRef, updatedHabit);
+      setHabits(prev => {
+        const nextHabits = prev.map(h =>
+          h.id === id ? { ...h, ...updatedHabit } : h
+        );
+        saveDailyHabitSnapshot(auth.currentUser?.uid, nextHabits).catch(console.warn);
+        return nextHabits;
+      });
       setEditingId(null);
-      setEditForm({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
+    } catch (error) {
+      console.error(error);
+      alert("Error updating habit");
     }
+  }
 
-    function handleExportData() {
-      try {
-        const jsonData = exportHabitsToJSON(habits, profile);
-        const filename = `habits-export-${new Date().toISOString().split('T')[0]}.json`;
-        downloadJSON(jsonData, filename);
-      } catch (error) {
-        console.error("Export failed:", error);
-        alert("Failed to export data. Please try again.");
-      }
+  function startEdit(habit) {
+    setEditingId(habit.id);
+    setEditForm({
+      name: habit.name,
+      cost: habit.cost,
+      frequency: habit.frequency,
+      frequencyType: habit.frequencyType || "daily",
+      category: habit.category || "Food"
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
+  }
+
+  function handleExportJSON() {
+    try {
+      const jsonData = exportHabitsToJSON(habits, profile);
+      const filename = `habits-export-${new Date().toISOString().split("T")[0]}.json`;
+      downloadJSON(jsonData, filename);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export data. Please try again.");
     }
-    
-    return(
-        <div className="habit-list">
-            <h2>Your Habits</h2>
-            
-            {habits.length > 0 && (
-              <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666', fontWeight: '600' }}>Filter by Category</p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      style={{
-                        padding: '8px 16px',
-                        background: selectedCategory === cat ? '#000' : '#f5f5f5',
-                        color: selectedCategory === cat ? '#fff' : '#000',
-                        border: selectedCategory === cat ? 'none' : '1px solid #ddd',
-                        borderRadius: '20px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {habits.length > 0 && (
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '2rem' }}>
-                  <div style={{ background: '#f5f5f5', padding: '16px 24px', borderRadius: '8px' }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Total Monthly</p>
-                    <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>{profile?.currency}{totalMonthly.toFixed(2)}</h3>
-                  </div>
-                  <div style={{ background: '#f5f5f5', padding: '16px 24px', borderRadius: '8px' }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Total Yearly</p>
-                    <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>{profile?.currency}{totalYearly.toFixed(2)}</h3>
-                  </div>
-                  
-                  {monthlyIncome > 0 && (
-                    <div style={{ background: '#f5f5f5', padding: '16px 24px', borderRadius: '8px' }}>
-                      <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#666' }}>Percentage of Income</p>
-                      <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#000' }}>
-                        {((totalMonthly / monthlyIncome) * 100).toFixed(1)}%
-                      </h3>
-                    </div>
-                  )}
-                  
-                  {daysLostPerMonth > 0 && (
-                    <div style={{ background: '#000', color: '#fff', padding: '16px 24px', borderRadius: '8px' }}>
-                      <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#ccc' }}>Days Lost Per Month</p>
-                      <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{daysLostPerMonth.toFixed(1)} days</h3>
-                      <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#bbb' }}>of your time every month</p>
-                    </div>
-                  )}
+  }
 
-                  {budgetStatus && (
-                    <div style={{
-                      background: budgetStatus.status === 'exceeded' ? '#fee' : budgetStatus.status === 'warning' ? '#fff3cd' : '#f0f0f0',
-                      border: budgetStatus.status === 'exceeded' ? '1px solid #fcc' : budgetStatus.status === 'warning' ? '1px solid #ffc107' : '1px solid #ddd',
-                      padding: '16px 24px',
-                      borderRadius: '8px'
-                    }}>
-                      <p style={{
-                        margin: '0 0 8px 0',
-                        fontSize: '0.9rem',
-                        color: budgetStatus.status === 'exceeded' ? '#c00' : budgetStatus.status === 'warning' ? '#856404' : '#666'
-                      }}>
-                        Budget Status
-                      </p>
-                      <h3 style={{
-                        margin: 0,
-                        fontSize: '1.5rem',
-                        color: budgetStatus.status === 'exceeded' ? '#c00' : budgetStatus.status === 'warning' ? '#856404' : '#000'
-                      }}>
-                        {budgetStatus.percentage.toFixed(1)}%
-                      </h3>
-                      <p style={{
-                        margin: '8px 0 0 0',
-                        fontSize: '0.85rem',
-                        color: budgetStatus.status === 'exceeded' ? '#c00' : budgetStatus.status === 'warning' ? '#856404' : '#666'
-                      }}>
-                        of {profile?.currency}{profile.budget} budget
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                {profile && monthlyIncome > 0 && (
-                  <div style={{ background: '#fff3cd', border: '1px solid #ffc107', padding: '16px', borderRadius: '8px', marginBottom: '2rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: '600', color: '#856404' }}>
-                      You are spending <strong>{daysLostPerMonth.toFixed(1)} days</strong> of your {profile.userType === "student" ? "pocket money" : "salary"} every month on these habits!
-                    </p>
-                  </div>
-                )}
+  function handleExportCSV() {
+    try {
+      const csvData = exportHabitsToCSV(habits, profile);
+      const filename = `habits-export-${new Date().toISOString().split("T")[0]}.csv`;
+      downloadCSV(csvData, filename);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export data. Please try again.");
+    }
+  }
 
-                {budgetStatus && budgetStatus.status === 'exceeded' && (
-                  <div style={{ background: '#fee', border: '1px solid #fcc', padding: '16px', borderRadius: '8px', marginBottom: '2rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: '600', color: '#c00' }}>
-                      Important: Your spending has exceeded your monthly budget of {profile?.currency}{profile.budget}. Consider reducing some habits or increasing your budget.
-                    </p>
-                  </div>
-                )}
+  return(
+    <div className="habit-list">
+      <h2>Your Habits</h2>
 
-                {habits.length > 0 && (
-                  <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                    <button
-                      className="habit-export-button"
-                      onClick={handleExportData}
-                    >
-                      Export Data
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {habits.length=== 0?(
-              <div className="no-habits">No habits added yet. Start by adding a habit above!</div>
-            ):filteredHabits.length === 0?(
-              <div className="no-habits">No habits in this category.</div>
-            ):(
-              <div>
-                <div className="habits-container">
-                  {filteredHabits.map((habit,index)=>{
-                    const monthly = getMonthlyCost(habit);
-                    const yearly = getYearlyCost(habit);
-                    const daysLost = dailyIncome ? (monthly / dailyIncome) : 0;
-                    
-                    if (editingId === habit.id) {
-                      return (
-                        <div className="habit-card" key={index}>
-                          <h3>Edit Habit</h3>
-                          <div className="auth-input-group" style={{ marginBottom: '16px' }}>
-                            <input
-                              className="auth-input"
-                              type="text"
-                              value={editForm.name}
-                              placeholder="Habit name"
-                              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                              style={{ marginBottom: '12px' }}
-                            />
-                            <input
-                              className="auth-input"
-                              type="number"
-                              value={editForm.cost}
-                              placeholder="Cost per occurrence"
-                              onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
-                              style={{ marginBottom: '12px' }}
-                            />
-                            <input
-                              className="auth-input"
-                              type="number"
-                              value={editForm.frequency}
-                              placeholder="Frequency"
-                              onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value })}
-                              style={{ marginBottom: '12px' }}
-                            />
-                            <select
-                              value={editForm.frequencyType}
-                              onChange={(e) => setEditForm({ ...editForm, frequencyType: e.target.value })}
-                              style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit', marginBottom: '12px' }}
-                            >
-                              <option value="daily">Daily</option>
-                              <option value="weekly">Weekly</option>
-                              <option value="monthly">Monthly</option>
-                            </select>
-                            <select
-                              value={editForm.category}
-                              onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                              style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
-                            >
-                              <option value="Food">Food</option>
-                              <option value="Transport">Transport</option>
-                              <option value="Subscriptions">Subscriptions</option>
-                              <option value="Entertainment">Entertainment</option>
-                              <option value="Health">Health & Fitness</option>
-                              <option value="Shopping">Shopping</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          </div>
-                          <div style={{ display: 'flex', gap: '12px' }}>
-                            <button
-                              onClick={() => handleEdit(habit.id, {
-                                name: editForm.name,
-                                cost: Number(editForm.cost),
-                                frequency: Number(editForm.frequency),
-                                frequencyType: editForm.frequencyType,
-                                category: editForm.category
-                              })}
-                              style={{ flex: 1, padding: '8px 16px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              style={{ flex: 1, padding: '8px 16px', background: '#fff', color: '#000', border: '2px solid #000', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return(
-                      <div className="habit-card" key={index}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                          <h3 style={{ margin: 0 }}>{habit.name}</h3>
-                          <span style={{ background: '#f5f5f5', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', color: '#666' }}>
-                            {habit.category || "Other"}
-                          </span>
-                        </div>
-                        <div className="cost-info">
-                          <p><strong>{profile?.currency}{habit.cost.toFixed(2)}</strong> × <strong>{habit.frequency}</strong> {habit.frequencyType || "weekly"}</p>
-                        </div>
-                        <p><strong>Monthly cost:</strong> {profile?.currency}{monthly.toFixed(2)}</p>
-                        <p><strong>Yearly cost:</strong> {profile?.currency}{yearly.toFixed(2)}</p>
-                        {daysLost > 0 && <div className="days-work">{daysLost.toFixed(1)} days of {profile?.userType === "student" ? "pocket money" : "salary"}/month</div>}
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                          <button
-                            onClick={() => startEdit(habit)}
-                            style={{ flex: 1, padding: '8px 16px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(habit.id)}
-                            style={{ flex: 1, padding: '8px 16px', background: '#fff', color: '#000', border: '2px solid #000', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+      {habits.length > 0 && (
+        <div className="habit-filter-container">
+          <p className="habit-filter-title">Filter by Category</p>
+          <div className="habit-filter-buttons">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`habit-filter-button ${selectedCategory === cat ? "active" : ""}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
-    );
+      )}
 
+      {habits.length > 0 && (
+        <div className="habit-insights">
+          {daysLostPerMonth > 0 && (
+            <div className="habit-time-hero">
+              <p>Cost in days of income</p>
+              <strong>{daysLostPerMonth.toFixed(1)} days/month</strong>
+              <span>These habits consume this much of your {incomeLabel} every month.</span>
+            </div>
+          )}
+
+          <div className="habit-summary-grid">
+            <div className="habit-summary-card">
+              <p>Total Monthly</p>
+              <h3>{currency}{totalMonthly.toFixed(2)}</h3>
+            </div>
+            <div className="habit-summary-card">
+              <p>Total Yearly</p>
+              <h3>{currency}{totalYearly.toFixed(2)}</h3>
+            </div>
+
+            {monthlyIncome > 0 && (
+              <div className="habit-summary-card">
+                <p>Percentage of Income</p>
+                <h3>{((totalMonthly / monthlyIncome) * 100).toFixed(1)}%</h3>
+              </div>
+            )}
+
+            {budgetStatus && (
+              <div className={`habit-summary-card budget-${budgetStatus.status}`}>
+                <p>Budget Status</p>
+                <h3>{budgetStatus.percentage.toFixed(1)}%</h3>
+                <span>of {currency}{profile.budget} budget</span>
+              </div>
+            )}
+          </div>
+
+          {!monthlyIncome && (
+            <div className="habit-warning-box">
+              <p>Add income in your profile to unlock the cost-in-days insight for every habit.</p>
+            </div>
+          )}
+
+          {budgetStatus && budgetStatus.status === "exceeded" && (
+            <div className="habit-danger-box">
+              <p>Your spending has exceeded your monthly budget of {currency}{profile.budget}. Consider reducing some habits or increasing your budget.</p>
+            </div>
+          )}
+
+          <div className="habit-export-actions">
+            <button className="habit-export-button" onClick={handleExportCSV}>
+              Export CSV
+            </button>
+            <button className="habit-export-button secondary" onClick={handleExportJSON}>
+              Export JSON
+            </button>
+          </div>
+        </div>
+      )}
+
+      {habits.length === 0 ? (
+        <div className="no-habits">No habits added yet. Start by adding a habit above!</div>
+      ) : filteredHabits.length === 0 ? (
+        <div className="no-habits">No habits in this category.</div>
+      ) : (
+        <div className="habits-container">
+          {filteredHabits.map((habit, index) => {
+            const monthly = getMonthlyCost(habit);
+            const yearly = getYearlyCost(habit);
+            const daysLost = dailyIncome ? (monthly / dailyIncome) : 0;
+
+            if (editingId === habit.id) {
+              return (
+                <div className="habit-card" key={habit.id || index}>
+                  <h3>Edit Habit</h3>
+                  <div className="auth-input-group" style={{ marginBottom: '16px' }}>
+                    <input
+                      className="auth-input"
+                      type="text"
+                      value={editForm.name}
+                      placeholder="Habit name"
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      style={{ marginBottom: '12px' }}
+                    />
+                    <input
+                      className="auth-input"
+                      type="number"
+                      value={editForm.cost}
+                      placeholder="Cost per occurrence"
+                      onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                      style={{ marginBottom: '12px' }}
+                    />
+                    <input
+                      className="auth-input"
+                      type="number"
+                      value={editForm.frequency}
+                      placeholder="Frequency"
+                      onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value })}
+                      style={{ marginBottom: '12px' }}
+                    />
+                    <select
+                      value={editForm.frequencyType}
+                      onChange={(e) => setEditForm({ ...editForm, frequencyType: e.target.value })}
+                      style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit', marginBottom: '12px' }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                    <select
+                      value={editForm.category}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit' }}
+                    >
+                      <option value="Food">Food</option>
+                      <option value="Transport">Transport</option>
+                      <option value="Subscriptions">Subscriptions</option>
+                      <option value="Entertainment">Entertainment</option>
+                      <option value="Health">Health & Fitness</option>
+                      <option value="Shopping">Shopping</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="habit-card-actions">
+                    <button
+                      className="habit-card-button primary"
+                      onClick={() => handleEdit(habit.id, {
+                        name: editForm.name,
+                        cost: Number(editForm.cost),
+                        frequency: Number(editForm.frequency),
+                        frequencyType: editForm.frequencyType,
+                        category: editForm.category
+                      })}
+                    >
+                      Save
+                    </button>
+                    <button className="habit-card-button secondary" onClick={cancelEdit}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return(
+              <div className={`habit-card ${habit.pending ? "pending" : ""}`} key={habit.id || index}>
+                <div className="habit-card-header">
+                  <h3>{habit.name}</h3>
+                  <span className="habit-category-badge">
+                    {habit.pending ? "Saving" : habit.category || "Other"}
+                  </span>
+                </div>
+                <div className="habit-cost-info">
+                  <p><strong>{currency}{Number(habit.cost).toFixed(2)}</strong> x <strong>{habit.frequency}</strong> {habit.frequencyType || "weekly"}</p>
+                </div>
+                {daysLost > 0 ? (
+                  <div className="time-cost-callout">
+                    <span>Time cost</span>
+                    <strong>{daysLost.toFixed(1)} days/month</strong>
+                    <small>of your {incomeLabel}</small>
+                  </div>
+                ) : (
+                  <div className="time-cost-empty">
+                    Add income to reveal this habit's time cost.
+                  </div>
+                )}
+                <p><strong>Monthly cost:</strong> {currency}{monthly.toFixed(2)}</p>
+                <p><strong>Yearly cost:</strong> {currency}{yearly.toFixed(2)}</p>
+                <div className="habit-card-actions">
+                  <button
+                    className="habit-card-button primary"
+                    onClick={() => startEdit(habit)}
+                    disabled={habit.pending}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="habit-card-button secondary"
+                    onClick={() => handleDelete(habit.id)}
+                    disabled={habit.pending}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
+
 export default Habitlist

@@ -91,6 +91,72 @@
   color: #fff;
 }
 
+.habit-insights {
+  margin-bottom: 32px;
+}
+
+.habit-time-hero {
+  background: #000;
+  color: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.habit-time-hero p {
+  margin: 0 0 8px 0;
+  color: #cfcfcf;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.habit-time-hero strong {
+  display: block;
+  color: #fff;
+  font-size: clamp(32px, 6vw, 56px);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.habit-time-hero span {
+  display: block;
+  color: #ddd;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.habit-summary-card span {
+  display: block;
+  margin-top: 8px;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.habit-summary-card.budget-exceeded {
+  background: #fee;
+  border: 1px solid #fcc;
+}
+
+.habit-summary-card.budget-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+}
+
+.habit-summary-card.budget-exceeded p,
+.habit-summary-card.budget-exceeded h3,
+.habit-summary-card.budget-exceeded span {
+  color: #c00;
+}
+
+.habit-summary-card.budget-warning p,
+.habit-summary-card.budget-warning h3,
+.habit-summary-card.budget-warning span {
+  color: #856404;
+}
+
 .habit-warning-box {
   background: #fff3cd;
   border: 1px solid #ffc107;
@@ -108,6 +174,28 @@
 
 .habit-warning-box strong {
   font-weight: 700;
+}
+
+.habit-danger-box {
+  background: #fee;
+  border: 1px solid #fcc;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.habit-danger-box p {
+  margin: 0;
+  color: #c00;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.habit-export-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .no-habits {
@@ -129,6 +217,10 @@
   border-radius: 8px;
   padding: 20px;
   transition: all 0.3s ease;
+}
+
+.habit-card.pending {
+  opacity: 0.72;
 }
 
 .habit-card:hover {
@@ -191,6 +283,43 @@
   font-size: 14px;
   font-weight: 600;
   color: #333;
+  text-align: center;
+}
+
+.time-cost-callout {
+  background: #000;
+  color: #fff;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 14px 0;
+}
+
+.time-cost-callout span,
+.time-cost-callout small {
+  display: block;
+  color: #d7d7d7;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.time-cost-callout strong {
+  display: block;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1.15;
+  margin: 6px 0;
+}
+
+.time-cost-empty {
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 14px 0;
+  font-size: 13px;
+  font-weight: 600;
   text-align: center;
 }
 
@@ -299,10 +428,21 @@
   letter-spacing: 0.5px;
 }
 
+.habit-export-button.secondary {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+}
+
 .habit-export-button:hover {
   background: #1a1a1a;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.habit-export-button.secondary:hover {
+  background: #f5f5f5;
+  color: #000;
 }
 
 .habit-export-button:active {

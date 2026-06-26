@@ -12,45 +12,49 @@ function ProfileSetup({ user, onComplete }) {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSave() {
-    setError("");
-    setSuccess("");
+  function buildProfileData({ skipped = false } = {}) {
+    return {
+      currency,
+      userType,
+      income: skipped || !income ? 0 : Number(income),
+      incomeFrequency,
+      budget: skipped || !budget ? null : Number(budget)
+    };
+  }
 
-    if (!income || income <= 0) {
-      setError("Please enter a valid income amount");
-      return;
+  function validateProfile() {
+    if (income && Number(income) <= 0) {
+      setError("Income must be greater than 0 if provided");
+      return false;
     }
 
-    if (income > 10000000) {
+    if (income && Number(income) > 10000000) {
       setError("Income seems too high. Please check the value");
-      return;
+      return false;
     }
 
-    if (budget && budget <= 0) {
+    if (budget && Number(budget) <= 0) {
       setError("Budget must be greater than 0 if provided");
-      return;
+      return false;
     }
 
-    if (budget && budget > 10000000) {
+    if (budget && Number(budget) > 10000000) {
       setError("Budget seems too high. Please check the value");
-      return;
+      return false;
     }
 
+    return true;
+  }
+
+  async function saveProfile(profileData, message) {
     setLoading(true);
     try {
-      await saveGoogleUserProfile(user, {
-        currency,
-        userType,
-        income: Number(income),
-        incomeFrequency,
-        budget: budget ? Number(budget) : null
-      });
+      await saveGoogleUserProfile(user, profileData);
+      setSuccess(message);
 
-      setSuccess("Profile saved successfully!");
-      
       setTimeout(() => {
-        onComplete();
-      }, 1000);
+        onComplete(profileData);
+      }, 700);
     } catch (err) {
       setError("Failed to save profile. Please try again.");
       console.error(err);
@@ -59,7 +63,24 @@ function ProfileSetup({ user, onComplete }) {
     }
   }
 
-  function handleKeyPress(e) {
+  async function handleSave() {
+    setError("");
+    setSuccess("");
+
+    if (!validateProfile()) {
+      return;
+    }
+
+    await saveProfile(buildProfileData(), "Profile saved successfully!");
+  }
+
+  async function handleSkip() {
+    setError("");
+    setSuccess("");
+    await saveProfile(buildProfileData({ skipped: true }), "You can add income and budget later.");
+  }
+
+  function handleKeyDown(e) {
     if (e.key === "Enter" && !loading) {
       handleSave();
     }
@@ -68,9 +89,9 @@ function ProfileSetup({ user, onComplete }) {
   return (
     <div className="profile-setup-container">
       <div className="profile-setup-card">
-        <h2>Complete Your Profile</h2>
+        <h2>Set Up Your Profile</h2>
         <p className="profile-setup-subtitle">
-          Welcome to Habit Tracker, Let's set up your profile.
+          Add income now for time-cost insights, or skip and start tracking habits first.
         </p>
 
         {error && <div className="profile-setup-error">{error}</div>}
@@ -105,15 +126,15 @@ function ProfileSetup({ user, onComplete }) {
 
         <div className="profile-setup-form-group">
           <label className="profile-setup-label">
-            {userType === "student" ? "Monthly Pocket Money" : "Monthly Salary"}
+            {userType === "student" ? "Monthly Pocket Money" : "Monthly Salary"} <span>(Optional)</span>
           </label>
           <input
             className="profile-setup-input"
             type="number"
-            placeholder="Enter amount"
+            placeholder="Enter amount when ready"
             value={income}
             onChange={(e) => setIncome(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             disabled={loading}
             min="0"
           />
@@ -133,21 +154,21 @@ function ProfileSetup({ user, onComplete }) {
         </div>
 
         <div className="profile-setup-form-group">
-          <label className="profile-setup-label">Monthly Spending Budget <span style={{ color: '#999', fontSize: '12px' }}>(Optional)</span></label>
+          <label className="profile-setup-label">Monthly Spending Budget <span>(Optional)</span></label>
           <input
             className="profile-setup-input"
             type="number"
-            placeholder="Enter your monthly budget (optional)"
+            placeholder="Enter your monthly budget"
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             disabled={loading}
             min="0"
           />
         </div>
 
         <div className="profile-setup-hint">
-          <strong>Note:</strong> You can always update these settings later from your profile. Budget is optional and helps us track spending limits.
+          Income powers the days-of-income insight. Budget helps show warnings, but neither is required to start adding habits.
         </div>
 
         <div className="profile-setup-button-group">
@@ -157,6 +178,13 @@ function ProfileSetup({ user, onComplete }) {
             disabled={loading}
           >
             {loading ? "Saving..." : "Save Profile"}
+          </button>
+          <button
+            className="profile-setup-button secondary"
+            onClick={handleSkip}
+            disabled={loading}
+          >
+            Skip for Now
           </button>
         </div>
       </div>
