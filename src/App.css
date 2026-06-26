@@ -164,6 +164,30 @@ body {
   color: var(--app-danger-text);
 }
 
+.app-toast {
+  position: sticky;
+  top: 12px;
+  z-index: 10;
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-left: 5px solid var(--app-accent);
+  color: var(--app-text);
+  border-radius: 8px;
+  box-shadow: var(--app-shadow);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.app-toast.success {
+  border-left-color: var(--app-success-text);
+}
+
+.app-toast.error {
+  border-left-color: var(--app-danger-text);
+}
+
 .app-offline-banner {
   background: var(--app-warning-bg);
   border: 1px solid var(--app-warning-border);
@@ -272,6 +296,51 @@ body {
 
 .chart-section {
   margin-bottom: 2rem;
+}
+
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.history-summary-card {
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-left: 5px solid var(--app-accent);
+  border-radius: 8px;
+  box-shadow: var(--app-shadow);
+  padding: 16px 20px;
+}
+
+.history-summary-card.positive {
+  border-left-color: var(--app-success-text);
+}
+
+.history-summary-card.negative {
+  border-left-color: var(--app-danger-text);
+}
+
+.history-summary-card p {
+  margin: 0 0 8px 0;
+  color: var(--app-muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.history-summary-card strong {
+  display: block;
+  color: var(--app-text);
+  font-size: 26px;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.history-summary-card span {
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .chart-grid {

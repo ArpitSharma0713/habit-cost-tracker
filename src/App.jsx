@@ -31,6 +31,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -139,6 +140,11 @@ function App() {
   const themeClass = darkMode ? "theme-dark" : "theme-light";
   const currency = profile?.currency || "\u20b9";
 
+  function showToast(message, type = "info") {
+    setToast({ message, type });
+    window.setTimeout(() => setToast(null), 3500);
+  }
+
   if (loading) {
     return (
       <div className="app-loading-shell">
@@ -190,6 +196,12 @@ function App() {
             </div>
           )}
 
+          {toast && (
+            <div className={`app-toast ${toast.type}`} role="status">
+              {toast.message}
+            </div>
+          )}
+
           {!isOnline && (
             <div className="app-offline-banner">
               You are offline. Existing data may stay visible, but changes need a connection to save.
@@ -231,9 +243,9 @@ function App() {
             </div>
           </div>
 
-          <Habitform setHabits={setHabits} currency={currency} />
+          <Habitform setHabits={setHabits} currency={currency} onNotify={showToast} />
           <HabitChart habits={habits} history={habitHistory} currency={currency} />
-          <Habitlist habits={habits} profile={profile} setHabits={setHabits}/>
+          <Habitlist habits={habits} profile={profile} setHabits={setHabits} onNotify={showToast}/>
         </main>
         <Footer/>
       </div>

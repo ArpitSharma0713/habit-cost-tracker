@@ -5,7 +5,7 @@ import { auth } from "./firebase";
 import { saveDailyHabitSnapshot } from "./history";
 import "./Habitform.css";
 
-function Habitform({ setHabits, currency = "₹" }) {
+function Habitform({ setHabits, currency = "\u20b9", onNotify }) {
   const [name, setName] = useState("");
   const [cost, setCost] = useState("");
   const [frequency, setFrequency] = useState("");
@@ -17,12 +17,17 @@ function Habitform({ setHabits, currency = "₹" }) {
     const user = auth.currentUser;
 
     if (!user) {
-      alert("Please login first");
+      onNotify?.("Please login first.", "error");
       return;
     }
 
     if (!name || !cost || !frequency) {
-      alert("Please fill all fields");
+      onNotify?.("Please fill all habit fields.", "error");
+      return;
+    }
+
+    if (Number(cost) <= 0 || Number(frequency) <= 0) {
+      onNotify?.("Cost and frequency must be greater than 0.", "error");
       return;
     }
 
@@ -55,10 +60,11 @@ function Habitform({ setHabits, currency = "₹" }) {
       setFrequency("");
       setFrequencyType("daily");
       setCategory("Food");
+      onNotify?.("Habit saved.", "success");
     } catch (error) {
       console.error(error);
       setHabits(prev => prev.filter(habit => habit.id !== tempId));
-      alert("Error saving habit");
+      onNotify?.("Could not save habit. Check your connection and try again.", "error");
     } finally {
       setSaving(false);
     }

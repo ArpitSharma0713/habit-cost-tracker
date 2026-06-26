@@ -12,7 +12,7 @@ import {
   Line,
   CartesianGrid
 } from "recharts";
-import { getMonthlyCost, getYearlyCost } from "./utils";
+import { getHabitHistorySummary, getMonthlyCost, getYearlyCost } from "./utils";
 
 const CHART_COLORS = [
   "var(--app-accent)",
@@ -55,6 +55,11 @@ function HabitChart({ habits, history = [], currency = "\u20b9" }) {
     monthly: Number(snapshot.totalMonthly || 0),
     habits: Number(snapshot.habitCount || 0)
   }));
+  const historySummary = getHabitHistorySummary(history);
+  const monthlyChange = historySummary.monthlyChange;
+  const monthlyChangeLabel = monthlyChange === 0
+    ? `${currency}0.00`
+    : `${monthlyChange > 0 ? "+" : "-"}${currency}${Math.abs(monthlyChange).toFixed(2)}`;
 
   const tooltipStyle = {
     background: "var(--app-surface-raised)",
@@ -71,6 +76,28 @@ function HabitChart({ habits, history = [], currency = "\u20b9" }) {
 
   return (
     <div className="chart-section">
+      {historySummary.latest && (
+        <div className="history-summary-grid">
+          <div className="history-summary-card">
+            <p>Latest snapshot</p>
+            <strong>{currency}{Number(historySummary.latest.totalMonthly || 0).toFixed(2)}</strong>
+            <span>{historySummary.latest.date}</span>
+          </div>
+
+          <div className={`history-summary-card ${monthlyChange > 0 ? "negative" : monthlyChange < 0 ? "positive" : ""}`}>
+            <p>Since previous snapshot</p>
+            <strong>{monthlyChangeLabel}</strong>
+            <span>{historySummary.previous ? `${historySummary.monthlyChangePercent.toFixed(1)}% change` : "More history needed"}</span>
+          </div>
+
+          <div className="history-summary-card">
+            <p>No-increase streak</p>
+            <strong>{historySummary.nonIncreaseStreak}</strong>
+            <span>{historySummary.nonIncreaseStreak === 1 ? "snapshot interval" : "snapshot intervals"}</span>
+          </div>
+        </div>
+      )}
+
       <div className="chart-grid">
         <div className="chart-card">
           <h4>Yearly Cost per Habit</h4>
