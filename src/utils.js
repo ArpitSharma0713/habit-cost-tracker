@@ -47,6 +47,53 @@ export function checkBudgetStatus(totalMonthly, budget) {
   return { status: "safe", percentage };
 }
 
+export function getHabitHistorySummary(history = []) {
+  const orderedHistory = [...history]
+    .filter((snapshot) => snapshot.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (orderedHistory.length === 0) {
+    return {
+      latest: null,
+      previous: null,
+      monthlyChange: 0,
+      monthlyChangePercent: 0,
+      nonIncreaseStreak: 0
+    };
+  }
+
+  const latest = orderedHistory.at(-1);
+  const previous = orderedHistory.at(-2) || null;
+  const monthlyChange = previous
+    ? Number(latest.totalMonthly || 0) - Number(previous.totalMonthly || 0)
+    : 0;
+  const previousMonthly = Number(previous?.totalMonthly || 0);
+  const monthlyChangePercent = previousMonthly
+    ? (monthlyChange / previousMonthly) * 100
+    : 0;
+
+  let nonIncreaseStreak = 0;
+
+  for (let index = orderedHistory.length - 1; index > 0; index -= 1) {
+    const currentMonthly = Number(orderedHistory[index].totalMonthly || 0);
+    const priorMonthly = Number(orderedHistory[index - 1].totalMonthly || 0);
+
+    if (currentMonthly <= priorMonthly) {
+      nonIncreaseStreak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    latest,
+    previous,
+    monthlyChange,
+    monthlyChangePercent,
+    nonIncreaseStreak
+  };
+}
+
 export function exportHabitsToJSON(habits, profile = null) {
   const exportData = {
     exportDate: new Date().toISOString(),

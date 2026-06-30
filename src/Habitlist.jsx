@@ -14,14 +14,15 @@ import {
 } from "./utils";
 import "./Habitlist.css";
 
-function Habitlist({ habits, profile, setHabits }) {
+function Habitlist({ habits, profile, setHabits, onNotify }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [busyHabit, setBusyHabit] = useState({ id: null, action: null });
 
   const categories = ["All", "Food", "Transport", "Subscriptions", "Entertainment", "Health", "Shopping", "Other"];
   const filteredHabits = selectedCategory === "All" ? habits : habits.filter(h => h.category === selectedCategory);
-  const currency = profile?.currency || "₹";
+  const currency = profile?.currency || "\u20b9";
   const incomeLabel = profile?.userType === "student" ? "pocket money" : "salary";
 
   const totalMonthly = filteredHabits.reduce((sum, h) => sum + getMonthlyCost(h), 0);
@@ -35,9 +36,11 @@ function Habitlist({ habits, profile, setHabits }) {
   async function handleDelete(id) {
     const habitToDelete = habits.find(habit => habit.id === id);
 
-    if (!habitToDelete || habitToDelete.pending) {
+    if (!habitToDelete || habitToDelete.pending || busyHabit.id) {
       return;
     }
+
+    setBusyHabit({ id, action: "delete" });
 
     try {
       await deleteDoc(doc(db, "habits", id));
@@ -46,13 +49,23 @@ function Habitlist({ habits, profile, setHabits }) {
         saveDailyHabitSnapshot(auth.currentUser?.uid, nextHabits).catch(console.warn);
         return nextHabits;
       });
+      onNotify?.("Habit deleted.", "success");
     } catch (error) {
       console.error(error);
-      alert("Error deleting habit");
+      onNotify?.("Could not delete habit. Check your connection and try again.", "error");
+    } finally {
+      setBusyHabit({ id: null, action: null });
     }
   }
 
   async function handleEdit(id, updatedHabit) {
+    if (!updatedHabit.name || updatedHabit.cost <= 0 || updatedHabit.frequency <= 0) {
+      onNotify?.("Habit name, cost, and frequency must be valid.", "error");
+      return;
+    }
+
+    setBusyHabit({ id, action: "edit" });
+
     try {
       const habitRef = doc(db, "habits", id);
       await updateDoc(habitRef, updatedHabit);
@@ -64,13 +77,20 @@ function Habitlist({ habits, profile, setHabits }) {
         return nextHabits;
       });
       setEditingId(null);
+      onNotify?.("Habit updated.", "success");
     } catch (error) {
       console.error(error);
-      alert("Error updating habit");
+      onNotify?.("Could not update habit. Check your connection and try again.", "error");
+    } finally {
+      setBusyHabit({ id: null, action: null });
     }
   }
 
   function startEdit(habit) {
+    if (busyHabit.action) {
+      return;
+    }
+
     setEditingId(habit.id);
     setEditForm({
       name: habit.name,
@@ -82,6 +102,10 @@ function Habitlist({ habits, profile, setHabits }) {
   }
 
   function cancelEdit() {
+    if (busyHabit.action) {
+      return;
+    }
+
     setEditingId(null);
     setEditForm({ name: "", cost: "", frequency: "", frequencyType: "daily", category: "" });
   }
@@ -91,9 +115,10 @@ function Habitlist({ habits, profile, setHabits }) {
       const jsonData = exportHabitsToJSON(habits, profile);
       const filename = `habits-export-${new Date().toISOString().split("T")[0]}.json`;
       downloadJSON(jsonData, filename);
+      onNotify?.("JSON export downloaded.", "success");
     } catch (error) {
       console.error("Export failed:", error);
-      alert("Failed to export data. Please try again.");
+      onNotify?.("Failed to export JSON. Please try again.", "error");
     }
   }
 
@@ -102,9 +127,10 @@ function Habitlist({ habits, profile, setHabits }) {
       const csvData = exportHabitsToCSV(habits, profile);
       const filename = `habits-export-${new Date().toISOString().split("T")[0]}.csv`;
       downloadCSV(csvData, filename);
+      onNotify?.("CSV export downloaded.", "success");
     } catch (error) {
       console.error("Export failed:", error);
-      alert("Failed to export data. Please try again.");
+      onNotify?.("Failed to export CSV. Please try again.", "error");
     }
   }
 
@@ -198,6 +224,8 @@ function Habitlist({ habits, profile, setHabits }) {
             const monthly = getMonthlyCost(habit);
             const yearly = getYearlyCost(habit);
             const daysLost = dailyIncome ? (monthly / dailyIncome) : 0;
+            const isEditingBusy = busyHabit.id === habit.id && busyHabit.action === "edit";
+            const isDeletingBusy = busyHabit.id === habit.id && busyHabit.action === "delete";
 
             if (editingId === habit.id) {
               return (
@@ -210,6 +238,7 @@ function Habitlist({ habits, profile, setHabits }) {
                       value={editForm.name}
                       placeholder="Habit name"
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      disabled={isEditingBusy}
                     />
                     <input
                       className="habit-edit-input"
@@ -217,6 +246,7 @@ function Habitlist({ habits, profile, setHabits }) {
                       value={editForm.cost}
                       placeholder="Cost per occurrence"
                       onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                      disabled={isEditingBusy}
                     />
                     <input
                       className="habit-edit-input"
@@ -224,11 +254,13 @@ function Habitlist({ habits, profile, setHabits }) {
                       value={editForm.frequency}
                       placeholder="Frequency"
                       onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value })}
+                      disabled={isEditingBusy}
                     />
                     <select
                       className="habit-edit-select"
                       value={editForm.frequencyType}
                       onChange={(e) => setEditForm({ ...editForm, frequencyType: e.target.value })}
+                      disabled={isEditingBusy}
                     >
                       <option value="daily">Daily</option>
                       <option value="weekly">Weekly</option>
@@ -238,6 +270,7 @@ function Habitlist({ habits, profile, setHabits }) {
                       className="habit-edit-select"
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      disabled={isEditingBusy}
                     >
                       <option value="Food">Food</option>
                       <option value="Transport">Transport</option>
@@ -252,16 +285,17 @@ function Habitlist({ habits, profile, setHabits }) {
                     <button
                       className="habit-card-button primary"
                       onClick={() => handleEdit(habit.id, {
-                        name: editForm.name,
+                        name: editForm.name.trim(),
                         cost: Number(editForm.cost),
                         frequency: Number(editForm.frequency),
                         frequencyType: editForm.frequencyType,
                         category: editForm.category
                       })}
+                      disabled={isEditingBusy}
                     >
-                      Save
+                      {isEditingBusy ? "Saving..." : "Save"}
                     </button>
-                    <button className="habit-card-button secondary" onClick={cancelEdit}>
+                    <button className="habit-card-button secondary" onClick={cancelEdit} disabled={isEditingBusy}>
                       Cancel
                     </button>
                   </div>
@@ -297,16 +331,16 @@ function Habitlist({ habits, profile, setHabits }) {
                   <button
                     className="habit-card-button primary"
                     onClick={() => startEdit(habit)}
-                    disabled={habit.pending}
+                    disabled={habit.pending || Boolean(busyHabit.id)}
                   >
                     Edit
                   </button>
                   <button
                     className="habit-card-button secondary"
                     onClick={() => handleDelete(habit.id)}
-                    disabled={habit.pending}
+                    disabled={habit.pending || Boolean(busyHabit.id)}
                   >
-                    Delete
+                    {isDeletingBusy ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </div>

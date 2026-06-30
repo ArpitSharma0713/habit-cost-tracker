@@ -415,6 +415,13 @@
   box-shadow: 0 0 0 3px var(--app-focus);
 }
 
+.habit-edit-input:disabled,
+.habit-edit-select:disabled {
+  background: var(--app-surface-muted);
+  color: var(--app-muted);
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .habit-list {
     padding: 12px;
