@@ -37,6 +37,16 @@ body {
   --app-shadow: 0 8px 24px rgba(20, 25, 30, 0.1);
   --app-shadow-strong: 0 12px 32px rgba(20, 25, 30, 0.16);
   --app-chart-grid: #d9dee5;
+  --app-chart-cursor: rgba(21, 23, 26, 0.07);
+  --app-chart-line: #1f5fbf;
+  --app-chart-1: #1f5fbf;
+  --app-chart-2: #b45309;
+  --app-chart-3: #047857;
+  --app-chart-4: #be123c;
+  --app-chart-5: #6d28d9;
+  --app-chart-6: #0f766e;
+  --app-chart-7: #a21caf;
+  --app-chart-8: #4b5563;
   --app-warning-bg: #fff7df;
   --app-warning-border: #f1c94a;
   --app-warning-text: #775a00;
@@ -65,6 +75,16 @@ body {
   --app-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
   --app-shadow-strong: 0 12px 32px rgba(0, 0, 0, 0.44);
   --app-chart-grid: #343b45;
+  --app-chart-cursor: rgba(243, 246, 249, 0.08);
+  --app-chart-line: #8ab4ff;
+  --app-chart-1: #8ab4ff;
+  --app-chart-2: #f6ad55;
+  --app-chart-3: #63d297;
+  --app-chart-4: #ff7a90;
+  --app-chart-5: #b99cff;
+  --app-chart-6: #5eead4;
+  --app-chart-7: #f08bd8;
+  --app-chart-8: #c7d0da;
   --app-warning-bg: #2d2614;
   --app-warning-border: #80651d;
   --app-warning-text: #f1d079;
@@ -294,6 +314,75 @@ body {
   background: var(--app-surface-muted);
 }
 
+.app-auth-notice-shell {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1216;
+  color: #ffffff;
+  padding: 24px;
+}
+
+.app-auth-notice-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 14px;
+  transition: all 0.2s ease;
+}
+
+.app-auth-notice-back:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.app-auth-notice-card {
+  width: min(440px, 100%);
+  background: #ffffff;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  color: #15171a;
+  padding: 40px;
+  text-align: center;
+}
+
+.app-auth-notice-card h1 {
+  color: #15171a;
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 0 0 14px;
+}
+
+.app-auth-notice-card p {
+  color: #606a76;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+
+.app-auth-notice-card code {
+  display: inline-block;
+  background: #eef1f4;
+  border: 1px solid #d9dee5;
+  border-radius: 6px;
+  color: #15171a;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
 .chart-section {
   margin-bottom: 2rem;
 }
@@ -361,6 +450,15 @@ body {
 .chart-card h4 {
   margin: 0 0 1rem 0;
   text-align: center;
+  color: var(--app-text);
+}
+
+.chart-card .recharts-pie-label-text,
+.chart-card .recharts-text {
+  fill: var(--app-muted);
+}
+
+.chart-card .recharts-tooltip-label {
   color: var(--app-text);
 }
 
@@ -492,6 +590,26 @@ select {
 }
 
 @media (max-width: 480px) {
+  .app-auth-notice-shell {
+    align-items: flex-start;
+    padding-top: 82px;
+  }
+
+  .app-auth-notice-back {
+    left: 16px;
+    right: 16px;
+    top: 16px;
+    width: calc(100% - 32px);
+  }
+
+  .app-auth-notice-card {
+    padding: 34px 24px;
+  }
+
+  .app-auth-notice-card h1 {
+    font-size: 24px;
+  }
+
   header {
     padding: 1rem;
   }

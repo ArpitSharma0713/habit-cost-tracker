@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { signup, login, logout, loginWithGoogle, getErrorMessage } from "./auth";
+import { useEffect, useState } from "react";
 import "./Auth.css";
 
-function Auth() {
+function Auth({ initialMode = "login", onBackToLanding, onAuthSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [isSignupMode, setIsSignupMode] = useState(false);
+  const [isSignupMode, setIsSignupMode] = useState(initialMode === "signup");
   const [currency, setCurrency] = useState("\u20b9");
   const [userType, setUserType] = useState("student");
   const [income, setIncome] = useState("");
@@ -15,6 +14,29 @@ function Auth() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIsSignupMode(initialMode === "signup");
+    setError("");
+    setSuccess("");
+  }, [initialMode]);
+
+  async function loadAuthApi() {
+    try {
+      return await import("./auth");
+    } catch (err) {
+      console.error("Unable to load Firebase auth:", err);
+      throw new Error("Firebase is not configured. Add your .env values and restart the dev server.");
+    }
+  }
+
+  function getFriendlyError(err, authApi) {
+    if (err.code && authApi?.getErrorMessage) {
+      return authApi.getErrorMessage(err.code);
+    }
+
+    return err.message || "An error occurred. Please try again";
+  }
 
   async function handleSignup() {
     setError("");
@@ -36,8 +58,10 @@ function Auth() {
     }
 
     setLoading(true);
+    let authApi = null;
     try {
-      await signup(email, password, {
+      authApi = await loadAuthApi();
+      const result = await authApi.signup(email, password, {
         currency,
         userType,
         income: income ? Number(income) : 0,
@@ -54,8 +78,9 @@ function Auth() {
       setIncomeFrequency("monthly");
       setIsSignupMode(false);
       setSuccess("Signup successful! Redirecting...");
+      onAuthSuccess?.(result.user);
     } catch (err) {
-      setError(getErrorMessage(err.code));
+      setError(getFriendlyError(err, authApi));
     } finally {
       setLoading(false);
     }
@@ -71,14 +96,17 @@ function Auth() {
     }
 
     setLoading(true);
+    let authApi = null;
     try {
-      await login(email, password);
+      authApi = await loadAuthApi();
+      const result = await authApi.login(email, password);
       setUser({ email });
       setEmail("");
       setPassword("");
       setSuccess("Login successful!");
+      onAuthSuccess?.(result.user);
     } catch (err) {
-      setError(getErrorMessage(err.code));
+      setError(getFriendlyError(err, authApi));
     } finally {
       setLoading(false);
     }
@@ -89,20 +117,29 @@ function Auth() {
     setSuccess("");
     setLoading(true);
 
+    let authApi = null;
     try {
-      const result = await loginWithGoogle();
+      authApi = await loadAuthApi();
+      const result = await authApi.loginWithGoogle();
       const googleUser = result.user;
       setUser({ email: googleUser.email });
       setSuccess("Google login successful!");
+      onAuthSuccess?.(googleUser);
     } catch (err) {
-      setError(getErrorMessage(err.code));
+      setError(getFriendlyError(err, authApi));
     } finally {
       setLoading(false);
     }
   }
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    try {
+      const authApi = await loadAuthApi();
+      await authApi.logout();
+    } catch (err) {
+      console.error(err);
+    }
+
     setUser(null);
     setEmail("");
     setPassword("");
@@ -113,6 +150,11 @@ function Auth() {
   if (user) {
     return (
       <div className="auth-container">
+        {onBackToLanding && (
+          <button type="button" className="auth-back-button" onClick={onBackToLanding}>
+            Back to public page
+          </button>
+        )}
         <div className="auth-card">
           <h1 className="auth-title">Welcome Back</h1>
           <p className="auth-welcome-message">Logged in as {user.email}</p>
@@ -129,6 +171,11 @@ function Auth() {
 
   return (
     <div className="auth-container">
+      {onBackToLanding && (
+        <button type="button" className="auth-back-button" onClick={onBackToLanding}>
+          Back to public page
+        </button>
+      )}
       <div className="auth-card">
         <h1 className="auth-title">
           {isSignupMode ? "Create Account" : "Login"}

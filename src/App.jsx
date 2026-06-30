@@ -1,255 +1,149 @@
 import './App.css'
-import { useEffect, useState } from 'react';
-import { auth, db } from './firebase';
-import { logout } from './auth';
-import Auth from './Auth.jsx';
-import ProfileSetup from './ProfileSetup.jsx';
-import Header from './Header.jsx'
-import Footer from './Footer.jsx'
-import Habitform from './Habitform.jsx';
-import Habitlist from './Habitlist.jsx';
-import HabitChart from './HabitChart.jsx';
-import SnowfallEffect from './SnowfallEffect.jsx';
-import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
-import { convertToMonthly } from './utils';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import LandingPage from './LandingPage.jsx';
 
-const DEFAULT_PROFILE = {
-  currency: "\u20b9",
-  userType: "working",
-  income: 0,
-  incomeFrequency: "monthly",
-  budget: null
-};
+const Auth = lazy(() => import('./Auth.jsx'));
+const Dashboard = lazy(() => import('./Dashboard.jsx'));
+
+const firebaseConfigValues = [
+  import.meta.env.VITE_FIREBASE_API_KEY,
+  import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  import.meta.env.VITE_FIREBASE_APP_ID
+];
+
+const hasFirebaseConfig = firebaseConfigValues.every((value) =>
+  Boolean(value) && !String(value).startsWith("your_")
+);
+
+function AppLoading() {
+  return (
+    <div className="app-loading-shell">
+      <div className="app-loading-card">
+        <div className="app-loading-title" />
+        <div className="app-loading-line" />
+        <div className="app-skeleton-grid">
+          <div className="app-skeleton-card" />
+          <div className="app-skeleton-card" />
+          <div className="app-skeleton-card" />
+        </div>
+        <div className="app-loading-copy">
+          Loading your habits. First load can take a moment on slower networks.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthConfigNotice({ onBackToLanding }) {
+  return (
+    <div className="app-auth-notice-shell">
+      <button type="button" className="app-auth-notice-back" onClick={onBackToLanding}>
+        Back to public page
+      </button>
+      <div className="app-auth-notice-card">
+        <h1>Firebase setup needed</h1>
+        <p>
+          Replace the placeholder Firebase values in your local .env file before using login, signup, Google auth, or the protected dashboard.
+        </p>
+        <code>.env</code>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [user, setUser] = useState(null);
-  const [habits, setHabits] = useState([]);
-  const [habitHistory, setHabitHistory] = useState([]);
-  const [profile, setProfile] = useState(DEFAULT_PROFILE);
-  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
-  const [showProfileSetup, setShowProfileSetup] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [checkingAuth, setCheckingAuth] = useState(hasFirebaseConfig);
+  const [publicView, setPublicView] = useState("landing");
+  const [authInitialMode, setAuthInitialMode] = useState("login");
 
   useEffect(() => {
-    let unsubscribeHabits = null;
-    let unsubscribeHistory = null;
+    if (!hasFirebaseConfig) {
+      return undefined;
+    }
 
-    const unsubscribeAuth = auth.onAuthStateChanged(async (currentUser) => {
-      unsubscribeHabits?.();
-      unsubscribeHistory?.();
-      unsubscribeHabits = null;
-      unsubscribeHistory = null;
+    let unsubscribeAuth = null;
+    let isCurrent = true;
 
+    async function listenForAuth() {
       try {
-        setUser(currentUser);
+        const { auth } = await import('./firebase');
 
-        if (!currentUser) {
-          setHabits([]);
-          setHabitHistory([]);
-          setProfile(DEFAULT_PROFILE);
-          setNeedsProfileSetup(false);
-          setShowProfileSetup(false);
-          setLoading(false);
+        if (!isCurrent) {
           return;
         }
 
-        const profileRef = doc(db, "users", currentUser.uid);
-        const profileSnap = await getDoc(profileRef);
-
-        if (profileSnap.exists()) {
-          setProfile({ ...DEFAULT_PROFILE, ...profileSnap.data() });
-          setNeedsProfileSetup(false);
-        } else {
-          setProfile(DEFAULT_PROFILE);
-          setNeedsProfileSetup(true);
-        }
-
-        const habitsQuery = query(
-          collection(db, "habits"),
-          where("userId", "==", currentUser.uid)
-        );
-
-        unsubscribeHabits = onSnapshot(
-          habitsQuery,
-          (snapshot) => {
-            const habitsData = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-
-            setHabits(habitsData);
-            setLoading(false);
-          },
-          (err) => {
-            console.error("Error loading habits:", err);
-            setError("Failed to load habits. Check your connection and try again.");
-            setLoading(false);
-          }
-        );
-
-        const historyQuery = query(
-          collection(db, "habitSnapshots"),
-          where("userId", "==", currentUser.uid)
-        );
-
-        unsubscribeHistory = onSnapshot(
-          historyQuery,
-          (snapshot) => {
-            const historyData = snapshot.docs
-              .map((doc) => ({ id: doc.id, ...doc.data() }))
-              .sort((a, b) => a.date.localeCompare(b.date));
-
-            setHabitHistory(historyData);
-          },
-          (err) => {
-            console.warn("Unable to load habit history:", err);
-          }
-        );
+        unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
+          setUser(currentUser);
+          setCheckingAuth(false);
+        });
       } catch (err) {
-        console.error("Error loading data:", err);
-        setError("Failed to load data. Please try again.");
-        setLoading(false);
+        console.error("Unable to initialize Firebase auth:", err);
+        setCheckingAuth(false);
       }
-    });
-
-    return () => {
-      unsubscribeAuth();
-      unsubscribeHabits?.();
-      unsubscribeHistory?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    function updateOnlineStatus() {
-      setIsOnline(navigator.onLine);
     }
 
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
+    listenForAuth();
 
     return () => {
-      window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", updateOnlineStatus);
+      isCurrent = false;
+      unsubscribeAuth?.();
     };
   }, []);
 
-  const themeClass = darkMode ? "theme-dark" : "theme-light";
-  const currency = profile?.currency || "\u20b9";
-
-  function showToast(message, type = "info") {
-    setToast({ message, type });
-    window.setTimeout(() => setToast(null), 3500);
+  function openAuth(mode) {
+    setAuthInitialMode(mode);
+    setPublicView("auth");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (loading) {
+  function returnToLanding() {
+    setPublicView("landing");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (checkingAuth) {
+    return <AppLoading />;
+  }
+
+  if (user) {
     return (
-      <div className="app-loading-shell">
-        <div className="app-loading-card">
-          <div className="app-loading-title" />
-          <div className="app-loading-line" />
-          <div className="app-skeleton-grid">
-            <div className="app-skeleton-card" />
-            <div className="app-skeleton-card" />
-            <div className="app-skeleton-card" />
-          </div>
-          <div className="app-loading-copy">
-            Loading your habits. First load can take a moment on slower networks.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Auth />;
-  }
-
-  if (showProfileSetup) {
-    return (
-      <div className={`app-shell ${themeClass}`}>
-        <ProfileSetup
+      <Suspense fallback={<AppLoading />}>
+        <Dashboard
           user={user}
-          onComplete={(savedProfile) => {
-            if (savedProfile) {
-              setProfile({ ...DEFAULT_PROFILE, ...savedProfile });
-            }
-            setNeedsProfileSetup(false);
-            setShowProfileSetup(false);
+          onSignedOut={() => {
+            setUser(null);
+            setPublicView("landing");
           }}
         />
-      </div>
+      </Suspense>
     );
   }
 
-  return(
-    <SnowfallEffect config={{ snowflakeCount: 100, color: darkMode ? '#FFFFFF' : '#D7DDE5' }}>
-      <div className={`app-shell ${themeClass}`}>
-        <Header/>
-        <main className="app-main">
-          {error && (
-            <div className="app-error-banner">
-              {error}
-            </div>
-          )}
+  if (publicView === "auth") {
+    if (!hasFirebaseConfig) {
+      return <AuthConfigNotice onBackToLanding={returnToLanding} />;
+    }
 
-          {toast && (
-            <div className={`app-toast ${toast.type}`} role="status">
-              {toast.message}
-            </div>
-          )}
+    return (
+      <Suspense fallback={<AppLoading />}>
+        <Auth
+          initialMode={authInitialMode}
+          onBackToLanding={returnToLanding}
+          onAuthSuccess={(authenticatedUser) => setUser(authenticatedUser)}
+        />
+      </Suspense>
+    );
+  }
 
-          {!isOnline && (
-            <div className="app-offline-banner">
-              You are offline. Existing data may stay visible, but changes need a connection to save.
-            </div>
-          )}
-
-          {needsProfileSetup && (
-            <div className="app-profile-prompt">
-              <div>
-                <strong>Add income later, track habits now.</strong>
-                <p>Income and budget are optional. Add them when you want the app to calculate the cost in days of your time.</p>
-              </div>
-              <button className="app-button primary" onClick={() => setShowProfileSetup(true)}>Add Profile Details</button>
-            </div>
-          )}
-
-          <div className="app-user-bar">
-            <div>
-              <p className="app-welcome">Welcome {user.email}</p>
-              {profile && profile.income > 0 && (
-                <div className="app-profile-meta">
-                  <p>
-                    {profile.userType === "student" ? "Pocket Money" : "Salary"}: {currency} {convertToMonthly(profile.income, profile.incomeFrequency).toFixed(2)}/month
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="app-actions">
-              <button
-                className="app-button secondary"
-                onClick={() => setDarkMode(!darkMode)}
-                aria-pressed={darkMode}
-              >
-                {darkMode ? 'Light' : 'Dark'}
-              </button>
-              <button className="app-button primary" onClick={logout}>
-                Logout
-              </button>
-            </div>
-          </div>
-
-          <Habitform setHabits={setHabits} currency={currency} onNotify={showToast} />
-          <HabitChart habits={habits} history={habitHistory} currency={currency} />
-          <Habitlist habits={habits} profile={profile} setHabits={setHabits} onNotify={showToast}/>
-        </main>
-        <Footer/>
-      </div>
-    </SnowfallEffect>
+  return (
+    <LandingPage
+      onLogin={() => openAuth("login")}
+      onSignup={() => openAuth("signup")}
+    />
   );
 }
 

@@ -15,13 +15,14 @@ import {
 import { getHabitHistorySummary, getMonthlyCost, getYearlyCost } from "./utils";
 
 const CHART_COLORS = [
-  "var(--app-accent)",
-  "#4f7cac",
-  "#d18f3f",
-  "#6a9f58",
-  "#b6617a",
-  "#6f64b4",
-  "#7a8794"
+  "var(--app-chart-1)",
+  "var(--app-chart-2)",
+  "var(--app-chart-3)",
+  "var(--app-chart-4)",
+  "var(--app-chart-5)",
+  "var(--app-chart-6)",
+  "var(--app-chart-7)",
+  "var(--app-chart-8)"
 ];
 
 function HabitChart({ habits, history = [], currency = "\u20b9" }) {
@@ -105,8 +106,16 @@ function HabitChart({ habits, history = [], currency = "\u20b9" }) {
             <BarChart data={chartData}>
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} {...axisProps} />
               <YAxis {...axisProps} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${currency}${value.toFixed(2)}`} />
-              <Bar dataKey="yearly" fill="var(--app-accent)" />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ fill: "var(--app-chart-cursor)" }}
+                formatter={(value) => `${currency}${value.toFixed(2)}`}
+              />
+              <Bar dataKey="yearly" radius={[6, 6, 0, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`bar-cell-${entry.name}-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -123,14 +132,18 @@ function HabitChart({ habits, history = [], currency = "\u20b9" }) {
                   labelLine={false}
                   label={(entry) => `${entry.name}: ${currency}${entry.value}`}
                   outerRadius={80}
-                  fill="var(--app-accent)"
+                  fill="var(--app-chart-1)"
                   dataKey="value"
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${currency}${value.toFixed(2)}`} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  cursor={{ fill: "var(--app-chart-cursor)" }}
+                  formatter={(value) => `${currency}${value.toFixed(2)}`}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -144,8 +157,19 @@ function HabitChart({ habits, history = [], currency = "\u20b9" }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--app-chart-grid)" />
                 <XAxis dataKey="date" {...axisProps} />
                 <YAxis {...axisProps} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${currency}${Number(value).toFixed(2)}`} />
-                <Line type="monotone" dataKey="monthly" stroke="var(--app-accent)" strokeWidth={3} dot={{ r: 4, fill: "var(--app-accent)" }} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  cursor={{ stroke: "var(--app-chart-line)", strokeWidth: 2 }}
+                  formatter={(value) => `${currency}${Number(value).toFixed(2)}`}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="monthly"
+                  stroke="var(--app-chart-line)"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "var(--app-chart-line)", stroke: "var(--app-surface-raised)", strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: "var(--app-chart-line)", stroke: "var(--app-surface-raised)", strokeWidth: 2 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           ) : (

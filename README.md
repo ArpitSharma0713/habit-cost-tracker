@@ -1,4 +1,4 @@
-# Habit Cost Tracker
+# Habit
 
 [![CI](https://github.com/ArpitSharma0713/habit-cost-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/ArpitSharma0713/habit-cost-tracker/actions/workflows/ci.yml)
 
